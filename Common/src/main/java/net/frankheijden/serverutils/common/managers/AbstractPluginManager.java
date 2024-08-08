@@ -51,6 +51,7 @@ public abstract class AbstractPluginManager<P, D extends ServerUtilsPluginDescri
 
                 description = descriptionOptional.get();
             } catch (InvalidPluginDescriptionException ex) {
+                ex.printStackTrace();
                 return new PluginResults<P>().addResult(file.getName(), Result.INVALID_DESCRIPTION);
             }
 

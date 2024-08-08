@@ -17,10 +17,6 @@ public class RSimplePluginManager {
         return reflection;
     }
 
-    public static Map<Pattern, PluginLoader> getFileAssociations(Object manager) throws IllegalAccessException {
-        return reflection.get(manager, "fileAssociations");
-    }
-
     public static List<Plugin> getPlugins(Object manager) {
         return reflection.get(manager, "plugins");
     }

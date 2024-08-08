@@ -8,10 +8,12 @@ import org.incendo.cloud.context.CommandInput;
 import org.incendo.cloud.parser.ArgumentParseResult;
 import org.incendo.cloud.parser.ArgumentParser;
 import org.incendo.cloud.parser.ParserDescriptor;
+import org.incendo.cloud.parser.standard.StringParser;
 import org.incendo.cloud.suggestion.BlockingSuggestionProvider;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,44 +37,26 @@ public class JarFilesParser<C extends ServerUtilsAudience<?>> implements Argumen
     @Override
     public @NonNull ArgumentParseResult<File @NonNull []> parse(@NonNull CommandContext<@NonNull C> commandContext,
                                                                 @NonNull CommandInput commandInput) {
+        if (!commandInput.hasRemainingInput()) {
+            return ArgumentParseResult.success(EMPTY);
+        }
         Set<String> pluginFiles = new HashSet<>(plugin.getPluginManager().getPluginFileNames());
+        System.out.println(Arrays.toString(pluginFiles.toArray(String[]::new)));
         List<File> files = new ArrayList<>();
-        while (!commandInput.isEmpty()) {
-            String input = commandInput.peekString();
-            if (input.isEmpty()) {
-                return ArgumentParseResult.success(EMPTY);
-            }
-            StringBuilder builder = new StringBuilder(commandInput.peekString());
+        char firstChar = commandInput.peek();
+        List<String> fileNames = new ArrayList<>();
+        if (firstChar == '"') {
+            commandInput.read();
+            String remaining = commandInput.readUntil('"');
+            fileNames.addAll(Arrays.asList(remaining.split(" ")));
+        } else {
+            fileNames.addAll(Arrays.asList(commandInput.readStringSkipWhitespace(false).split(" ")));
+        }
 
-            final String pluginFileName;
-            if (builder.charAt(0) == '"') {
-                while (commandInput.hasRemainingInput()) {
-                    if (builder.length() > 1 && builder.charAt(builder.length() - 1) == '"') {
-                        break;
-                    }
-                    builder.append(" ").append(commandInput.readString());
-                }
-
-                if (builder.charAt(builder.length() - 1) != '"') {
-                    return ArgumentParseResult.failure(new IllegalArgumentException(
-                            "Could not find closing '\"' character"
-                    ));
-                }
-                pluginFileName = builder.substring(1, builder.length() - 1);
-            } else {
-                if (!builder.isEmpty()) {
-                    int lastChar;
-                    while (builder.charAt((lastChar = builder.length() - 1)) == '\\' && commandInput.hasRemainingInput()) {
-                        builder.setCharAt(lastChar, ' ');
-                        builder.append(commandInput.readString());
-                    }
-                }
-                pluginFileName = builder.toString();
-            }
-
+        for (String pluginFileName : fileNames) {
             if (!pluginFiles.contains(pluginFileName)) {
                 return ArgumentParseResult.failure(new IllegalArgumentException(
-                        "Plugin '" + pluginFileName + "' does not exist!"
+                        "Jar file for plugin '" + pluginFileName + "' does not exist!"
                 ));
             }
             files.add(new File(plugin.getPluginManager().getPluginsFolder(), pluginFileName));

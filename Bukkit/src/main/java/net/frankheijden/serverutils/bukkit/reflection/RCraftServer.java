@@ -2,12 +2,12 @@ package net.frankheijden.serverutils.bukkit.reflection;
 
 import dev.frankheijden.minecraftreflection.MinecraftReflection;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 import net.frankheijden.serverutils.bukkit.utils.version.MinecraftVersions;
-import net.frankheijden.serverutils.bukkit.utils.version.VersionUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Warning;
 import org.bukkit.command.Command;
@@ -53,7 +53,8 @@ public class RCraftServer {
     public static void syncCommands(Set<String> removedCommands) {
         if (MinecraftVersions.CURRENT.minor() < 13) return;
 
-        Collection children = RCommandDispatcher.getDispatcher().getRoot().getChildren();
+        // Avoid CME from directly modifying this collection
+        Collection children = new ArrayList(RCommandDispatcher.getDispatcher().getRoot().getChildren());
         reflection.invoke(Bukkit.getServer(), "syncCommands");
         Object root = RCommandDispatcher.getDispatcher().getRoot();
 

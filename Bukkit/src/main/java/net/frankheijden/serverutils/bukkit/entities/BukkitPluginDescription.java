@@ -1,14 +1,15 @@
 package net.frankheijden.serverutils.bukkit.entities;
 
 import java.io.File;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
+
+import io.papermc.paper.plugin.configuration.PluginMeta;
 import net.frankheijden.serverutils.common.entities.ServerUtilsPluginDescription;
-import org.bukkit.plugin.PluginDescriptionFile;
 
 public class BukkitPluginDescription implements ServerUtilsPluginDescription {
 
-    private final PluginDescriptionFile descriptionFile;
+    private final PluginMeta descriptionFile;
     private final File file;
     private final String author;
     private final Set<String> dependencies;
@@ -16,11 +17,11 @@ public class BukkitPluginDescription implements ServerUtilsPluginDescription {
     /**
      * Constructs a new BukkitPluginDescription.
      */
-    public BukkitPluginDescription(PluginDescriptionFile descriptionFile, File file) {
+    public BukkitPluginDescription(PluginMeta descriptionFile, File file) {
         this.descriptionFile = descriptionFile;
         this.file = file;
         this.author = String.join(", ", this.descriptionFile.getAuthors());
-        this.dependencies = new HashSet<>(descriptionFile.getDepend());
+        this.dependencies = new LinkedHashSet<>(descriptionFile.getPluginDependencies());
     }
 
     @Override
@@ -53,7 +54,7 @@ public class BukkitPluginDescription implements ServerUtilsPluginDescription {
         return this.dependencies;
     }
 
-    public PluginDescriptionFile getDescriptionFile() {
+    public PluginMeta getPluginMeta() {
         return descriptionFile;
     }
 }

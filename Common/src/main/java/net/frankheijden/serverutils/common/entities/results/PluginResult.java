@@ -24,7 +24,7 @@ public class PluginResult<T> implements AbstractResult {
         this.pluginId = pluginId;
         this.plugin = plugin;
         this.result = result;
-        this.placeholders = new TagResolver[placeholders.length + 2];
+        this.placeholders = new TagResolver[placeholders.length + 1];
         this.placeholders[0] = Placeholder.unparsed("plugin", pluginId);
         System.arraycopy(placeholders, 0, this.placeholders, 1, placeholders.length);
     }

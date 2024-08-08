@@ -1,5 +1,6 @@
 package net.frankheijden.serverutils.bukkit.managers;
 
+import io.papermc.paper.plugin.configuration.PluginMeta;
 import net.frankheijden.serverutils.bukkit.entities.BukkitPluginDescription;
 import net.frankheijden.serverutils.bukkit.events.BukkitPluginDisableEvent;
 import net.frankheijden.serverutils.bukkit.events.BukkitPluginEnableEvent;
@@ -11,7 +12,10 @@ import net.frankheijden.serverutils.bukkit.reflection.RCraftServer;
 import net.frankheijden.serverutils.bukkit.reflection.RCraftingManager;
 import net.frankheijden.serverutils.bukkit.reflection.RJavaPlugin;
 import net.frankheijden.serverutils.bukkit.reflection.RJavaPluginLoader;
+import net.frankheijden.serverutils.bukkit.reflection.RPaperPluginInstanceManager;
+import net.frankheijden.serverutils.bukkit.reflection.RPaperPluginManagerImpl;
 import net.frankheijden.serverutils.bukkit.reflection.RPluginClassLoader;
+import net.frankheijden.serverutils.bukkit.reflection.RPluginFileType;
 import net.frankheijden.serverutils.bukkit.reflection.RSimplePluginManager;
 import net.frankheijden.serverutils.common.entities.exceptions.InvalidPluginDescriptionException;
 import net.frankheijden.serverutils.common.entities.results.CloseablePluginResults;
@@ -33,6 +37,7 @@ import org.bukkit.plugin.UnknownDependencyException;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -154,6 +160,8 @@ public class BukkitPluginManager extends AbstractPluginManager<Plugin, BukkitPlu
             try {
                 RSimplePluginManager.getPlugins(Bukkit.getPluginManager()).remove(plugin);
                 RSimplePluginManager.removeLookupName(Bukkit.getPluginManager(), pluginId);
+                Object instanceManager = RPaperPluginManagerImpl.instanceManager();
+                RPaperPluginInstanceManager.removePlugin(instanceManager, plugin);
                 ClassLoader classLoader = plugin.getClass().getClassLoader();
                 PluginLoader loader = RPluginClassLoader.getLoader(classLoader);
                 Map<String, Class<?>> classes = RPluginClassLoader.getClasses(classLoader);
@@ -349,48 +357,29 @@ public class BukkitPluginManager extends AbstractPluginManager<Plugin, BukkitPlu
         return knownCommands.get(command);
     }
 
-    /**
-     * Retrieves all file associations, i.e. all plugin loaders.
-     * @return A map with all pluginloaders.
-     */
-    public static Map<Pattern, PluginLoader> getFileAssociations() {
-        try {
-            return RSimplePluginManager.getFileAssociations(Bukkit.getPluginManager());
-        } catch (IllegalAccessException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-    }
 
-    /**
-     * Retrieves the PluginLoader for the input file.
-     * @param file The file.
-     * @return The appropiate PluginLoader.
-     */
-    public static Optional<PluginLoader> getPluginLoader(File file) {
-        Map<Pattern, PluginLoader> fileAssociations = getFileAssociations();
-        if (fileAssociations != null) {
-            for (Map.Entry<Pattern, PluginLoader> entry : fileAssociations.entrySet()) {
-                Matcher match = entry.getKey().matcher(file.getName());
-                if (match.find()) {
-                    return Optional.ofNullable(entry.getValue());
-                }
-            }
+    public static Optional<PluginMeta> getPluginMeta(File file) throws InvalidPluginDescriptionException {
+        JarFile jarFile;
+        try {
+            jarFile = new JarFile(file, true, JarFile.OPEN_READ, JarFile.runtimeVersion());
+        } catch (IOException ex) {
+            throw new InvalidPluginDescriptionException(ex);
         }
-        return Optional.empty();
+        try {
+            return Optional.ofNullable(RPluginFileType.getPluginMeta(jarFile));
+        } catch (InvalidPluginDescriptionException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new InvalidPluginDescriptionException(ex);
+        }
     }
 
     @Override
     public Optional<BukkitPluginDescription> getPluginDescription(File file) throws InvalidPluginDescriptionException {
         if (!file.exists()) return Optional.empty();
 
-        Optional<PluginLoader> loader = getPluginLoader(file);
-        if (!loader.isPresent()) throw new InvalidPluginDescriptionException("Plugin loader is not present!");
-        try {
-            return Optional.of(new BukkitPluginDescription(loader.get().getPluginDescription(file), file));
-        } catch (InvalidDescriptionException ex) {
-            throw new InvalidPluginDescriptionException(ex);
-        }
+        Optional<PluginMeta> meta = getPluginMeta(file);
+        return meta.map(pluginMeta -> new BukkitPluginDescription(pluginMeta, file));
     }
 
     @Override
