@@ -2,15 +2,15 @@ package net.frankheijden.serverutils.bukkit.entities;
 
 import net.frankheijden.serverutils.bukkit.ServerUtils;
 import net.frankheijden.serverutils.common.providers.ServerUtilsAudienceProvider;
-import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.permissions.Permissible;
 
 public class BukkitAudienceProvider implements ServerUtilsAudienceProvider<CommandSender> {
 
-    private final ForwardingAudience audience;
+    private final Server audience;
     private final BukkitAudience consoleServerAudience;
 
     /**

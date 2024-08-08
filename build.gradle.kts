@@ -84,7 +84,7 @@ subprojects {
         relocate("cloud.commandframework", "${dependencyDir}.cloud")
         relocate("me.lucko.commodore", "${dependencyDir}.commodore")
         relocate("io.leangen.geantyref", "${dependencyDir}.typetoken")
-        if (project.name != "Velocity") {
+        if (project.name != "Velocity" && project.name != "Bukkit") {
             relocate("net.kyori.adventure", "${dependencyDir}.adventure")
             relocate("net.kyori.examination", "${dependencyDir}.examination")
         }
