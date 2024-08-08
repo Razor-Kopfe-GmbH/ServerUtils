@@ -80,7 +80,9 @@ public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, P
         CommandComponent<BukkitAudience> configComponent = CommandComponent.<BukkitAudience, String>builder()
                 .name("config")
                 .suggestionProvider((BlockingSuggestionProvider.Strings<BukkitAudience>) (context, s) -> supportedConfigNames)
+                .valueType(String.class)
                 .build();
+        addComponent(configComponent);
 
         registerSubcommand(manager, builder, "enableplugin", subcommandBuilder -> subcommandBuilder
                 .argument(getComponent("plugins"))
