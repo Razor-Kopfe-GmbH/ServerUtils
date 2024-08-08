@@ -7,7 +7,9 @@ import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
 import net.frankheijden.serverutils.common.entities.ServerUtilsPlugin;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.Template;
+import net.kyori.adventure.text.minimessage.tag.TagPattern;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 public class MessagesResource extends ServerUtilsResource {
 
@@ -22,7 +24,7 @@ public class MessagesResource extends ServerUtilsResource {
     public MessagesResource(ServerUtilsPlugin<?, ?, ?, ?, ?> plugin) {
         super(plugin, MESSAGES_RESOURCE);
         this.messageMap = new HashMap<>();
-        this.miniMessage = MiniMessage.get();
+        this.miniMessage = MiniMessage.miniMessage();
     }
 
     public Message get(String path) {
@@ -54,32 +56,31 @@ public class MessagesResource extends ServerUtilsResource {
         public Message(PlaceholderConfigKey key) {
             this.key = key;
             this.messageString = getConfig().getString("messages." + key.getPath());
-            this.component = key.hasPlaceholders() ? null : miniMessage.parse(messageString);
+            this.component = key.hasPlaceholders() ? null : miniMessage.deserialize(messageString);
         }
 
         /**
          * Creates a {@link Component}.
          */
         public Component toComponent() {
-            return this.component == null ? miniMessage.parse(messageString) : this.component;
+            return this.component == null ? miniMessage.deserialize(messageString) : this.component;
         }
 
-        /**
-         * Creates a {@link Component}.
-         */
-        public Component toComponent(Template... templates) {
-            return this.component == null ? miniMessage.parse(messageString, templates) : this.component;
+        public Component toComponent(TagResolver... tags) {
+            return this.component == null ? miniMessage.deserialize(messageString, tags) : this.component;
         }
 
-        /**
-         * Creates a {@link Component}.
-         */
-        public Component toComponent(String... placeholders) {
-            return this.component == null ? miniMessage.parse(messageString, placeholders) : this.component;
+        public Component toComponent(@TagPattern String placeholderName, String value) {
+            return toComponent(Placeholder.unparsed(placeholderName, value));
         }
 
-        public void sendTo(ServerUtilsAudience<?> serverAudience, Template... placeholders) {
-            serverAudience.sendMessage(toComponent(placeholders));
+
+        public void sendTo(ServerUtilsAudience<?> serverAudience, TagResolver... tags) {
+            serverAudience.sendMessage(toComponent(tags));
+        }
+
+        public void sendTo(ServerUtilsAudience<?> serverAudience, @TagPattern String tag, String value) {
+            serverAudience.sendMessage(toComponent(tag, value));
         }
     }
 

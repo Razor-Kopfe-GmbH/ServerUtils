@@ -1,6 +1,20 @@
 package net.frankheijden.serverutils.common.tasks;
 
 import com.sun.nio.file.SensitivityWatchEventModifier;
+import net.frankheijden.serverutils.common.config.MessageKey;
+import net.frankheijden.serverutils.common.entities.AbstractTask;
+import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
+import net.frankheijden.serverutils.common.entities.ServerUtilsPlugin;
+import net.frankheijden.serverutils.common.entities.ServerUtilsPluginDescription;
+import net.frankheijden.serverutils.common.entities.exceptions.InvalidPluginDescriptionException;
+import net.frankheijden.serverutils.common.entities.results.PluginResult;
+import net.frankheijden.serverutils.common.entities.results.PluginResults;
+import net.frankheijden.serverutils.common.entities.results.WatchResult;
+import net.frankheijden.serverutils.common.managers.AbstractPluginManager;
+import net.frankheijden.serverutils.common.utils.FileUtils;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
@@ -17,18 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.frankheijden.serverutils.common.config.MessageKey;
-import net.frankheijden.serverutils.common.entities.AbstractTask;
-import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
-import net.frankheijden.serverutils.common.entities.ServerUtilsPlugin;
-import net.frankheijden.serverutils.common.entities.ServerUtilsPluginDescription;
-import net.frankheijden.serverutils.common.entities.exceptions.InvalidPluginDescriptionException;
-import net.frankheijden.serverutils.common.entities.results.PluginResult;
-import net.frankheijden.serverutils.common.entities.results.PluginResults;
-import net.frankheijden.serverutils.common.entities.results.WatchResult;
-import net.frankheijden.serverutils.common.managers.AbstractPluginManager;
-import net.frankheijden.serverutils.common.utils.FileUtils;
-import net.kyori.adventure.text.minimessage.Template;
 
 public class PluginWatcherTask<P, T> extends AbstractTask {
 
@@ -116,7 +118,7 @@ public class PluginWatcherTask<P, T> extends AbstractTask {
                 ServerUtilsPluginDescription description = descriptionOptional.get();
                 WatchEntry foundEntry = pluginIdToWatchEntryMap.remove(description.getId());
                 if (foundEntry != null) {
-                    send(WatchResult.DELETED_FILE_IS_CREATED, Template.of("plugin", foundEntry.pluginId));
+                    send(WatchResult.DELETED_FILE_IS_CREATED, Placeholder.unparsed("plugin", foundEntry.pluginId));
                     fileNameToWatchEntryMap.put(fileName, foundEntry);
 
                     if (pluginIdToWatchEntryMap.isEmpty()) {
@@ -139,7 +141,7 @@ public class PluginWatcherTask<P, T> extends AbstractTask {
         AbstractPluginManager<P, ?> pluginManager = plugin.getPluginManager();
         Optional<File> fileOptional = pluginManager.getPluginFile(entry.pluginId);
         if (!fileOptional.isPresent()) {
-            send(WatchResult.FILE_DELETED, Template.of("plugin", entry.pluginId));
+            send(WatchResult.FILE_DELETED, Placeholder.unparsed("plugin", entry.pluginId));
 
             fileNameToWatchEntryMap.remove(fileName);
             pluginIdToWatchEntryMap.put(entry.pluginId, entry);
@@ -183,10 +185,10 @@ public class PluginWatcherTask<P, T> extends AbstractTask {
         }, 10L);
     }
 
-    private void send(WatchResult result, Template... templates) {
-        result.sendTo(sender, templates);
+    private void send(WatchResult result, TagResolver... tagResolvers) {
+        result.sendTo(sender, tagResolvers);
         if (sender.isPlayer()) {
-            result.sendTo(plugin.getChatProvider().getConsoleServerAudience(), templates);
+            result.sendTo(plugin.getChatProvider().getConsoleServerAudience(), tagResolvers);
         }
     }
 

@@ -1,13 +1,14 @@
 package net.frankheijden.serverutils.common.entities.results;
 
 import net.frankheijden.serverutils.common.config.ConfigKey;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 public class PluginWatchResult implements AbstractResult {
 
     private final WatchResult result;
-    private final String[] placeholders;
+    private final TagResolver[] placeholders;
 
-    public PluginWatchResult(WatchResult result, String... placeholders) {
+    public PluginWatchResult(WatchResult result, TagResolver... placeholders) {
         this.result = result;
         this.placeholders = placeholders;
     }
@@ -16,7 +17,7 @@ public class PluginWatchResult implements AbstractResult {
         return result;
     }
 
-    public String[] getPlaceholders() {
+    public TagResolver[] getPlaceholders() {
         return placeholders;
     }
 

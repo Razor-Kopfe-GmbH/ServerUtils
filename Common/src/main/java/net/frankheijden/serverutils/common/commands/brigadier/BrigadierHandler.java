@@ -1,10 +1,10 @@
 package net.frankheijden.serverutils.common.commands.brigadier;
 
-import cloud.commandframework.brigadier.CloudBrigadierManager;
+import net.frankheijden.serverutils.common.commands.arguments.JarFilesParser;
+import net.frankheijden.serverutils.common.commands.arguments.PluginsParser;
+import org.incendo.cloud.brigadier.CloudBrigadierManager;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import io.leangen.geantyref.TypeToken;
-import net.frankheijden.serverutils.common.commands.arguments.JarFilesArgument;
-import net.frankheijden.serverutils.common.commands.arguments.PluginsArgument;
 import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
 
 public class BrigadierHandler<C extends ServerUtilsAudience<?>, P> {
@@ -20,13 +20,13 @@ public class BrigadierHandler<C extends ServerUtilsAudience<?>, P> {
      */
     public void registerTypes() {
         brigadierManager.registerMapping(
-                new TypeToken<JarFilesArgument.JarFilesParser<C>>() {},
+                new TypeToken<JarFilesParser<C>>() {},
                 builder -> builder
                         .cloudSuggestions()
                         .toConstant(StringArgumentType.greedyString())
         );
         brigadierManager.registerMapping(
-                new TypeToken<PluginsArgument.PluginsParser<C, P>>() {},
+                new TypeToken<PluginsParser<C, P>>() {},
                 builder -> builder
                         .cloudSuggestions()
                         .toConstant(StringArgumentType.greedyString())

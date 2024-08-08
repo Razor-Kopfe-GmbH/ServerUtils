@@ -1,9 +1,5 @@
 package net.frankheijden.serverutils.bungee.entities;
 
-import cloud.commandframework.bungee.BungeeCommandManager;
-import cloud.commandframework.execution.AsynchronousCommandExecutionCoordinator;
-import java.io.File;
-import java.util.logging.Logger;
 import net.frankheijden.serverutils.bungee.ServerUtils;
 import net.frankheijden.serverutils.bungee.commands.BungeeCommandPlugins;
 import net.frankheijden.serverutils.bungee.commands.BungeeCommandServerUtils;
@@ -15,6 +11,12 @@ import net.kyori.adventure.platform.bungeecord.BungeeAudiences;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
+import org.incendo.cloud.SenderMapper;
+import org.incendo.cloud.bungee.BungeeCommandManager;
+import org.incendo.cloud.execution.ExecutionCoordinator;
+
+import java.io.File;
+import java.util.logging.Logger;
 
 public class BungeePlugin extends ServerUtilsPlugin<Plugin, ScheduledTask, BungeeAudience, CommandSender, BungeePluginDescription> {
 
@@ -42,9 +44,8 @@ public class BungeePlugin extends ServerUtilsPlugin<Plugin, ScheduledTask, Bunge
     protected BungeeCommandManager<BungeeAudience> newCommandManager() {
         return new BungeeCommandManager<>(
                 plugin,
-                AsynchronousCommandExecutionCoordinator.<BungeeAudience>newBuilder().build(),
-                chatProvider::get,
-                BungeeAudience::getSource
+                ExecutionCoordinator.asyncCoordinator(),
+                SenderMapper.create(chatProvider::get, BungeeAudience::getSource)
         );
     }
 

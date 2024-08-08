@@ -1,5 +1,7 @@
 package net.frankheijden.serverutils.common.entities.results;
 
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
@@ -19,7 +21,7 @@ public class CloseablePluginResult<T> extends PluginResult<T> implements Closeab
             T plugin,
             Result result,
             List<Closeable> closeables,
-            String... placeholders
+            TagResolver... placeholders
     ) {
         super(pluginId, plugin, result, placeholders);
         this.closeables = closeables;

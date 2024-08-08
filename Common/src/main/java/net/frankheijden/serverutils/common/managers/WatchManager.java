@@ -10,6 +10,7 @@ import net.frankheijden.serverutils.common.entities.ServerUtilsPlugin;
 import net.frankheijden.serverutils.common.entities.results.PluginWatchResults;
 import net.frankheijden.serverutils.common.entities.results.WatchResult;
 import net.frankheijden.serverutils.common.tasks.PluginWatcherTask;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 public class WatchManager<P, T> {
 
@@ -29,7 +30,7 @@ public class WatchManager<P, T> {
         for (P watchPlugin : plugins) {
             String pluginId = plugin.getPluginManager().getPluginId(watchPlugin);
             if (watchTasks.containsKey(pluginId)) {
-                return new PluginWatchResults().add(WatchResult.ALREADY_WATCHING, "plugin", pluginId);
+                return new PluginWatchResults().add(WatchResult.ALREADY_WATCHING, Placeholder.unparsed("plugin", pluginId));
             }
 
             pluginIds.add(plugin.getPluginManager().getPluginId(watchPlugin));
@@ -48,7 +49,7 @@ public class WatchManager<P, T> {
 
         PluginWatchResults watchResults = new PluginWatchResults();
         for (String pluginId : pluginIds) {
-            watchResults.add(WatchResult.START, "plugin", pluginId);
+            watchResults.add(WatchResult.START, Placeholder.unparsed("plugin", pluginId));
         }
         return watchResults;
     }
@@ -63,11 +64,11 @@ public class WatchManager<P, T> {
 
             PluginWatchResults watchResults = new PluginWatchResults();
             for (String pluginId : task.pluginIds) {
-                watchResults.add(WatchResult.STOPPED, "plugin", pluginId);
+                watchResults.add(WatchResult.STOPPED, Placeholder.unparsed("plugin", pluginId));
             }
             return watchResults;
         }
-        return new PluginWatchResults().add(WatchResult.NOT_WATCHING, "plugin", associatedPluginId);
+        return new PluginWatchResults().add(WatchResult.NOT_WATCHING, Placeholder.unparsed("plugin", associatedPluginId));
     }
 
     private static final class WatchTask {

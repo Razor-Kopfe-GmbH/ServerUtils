@@ -1,5 +1,36 @@
 package net.frankheijden.serverutils.bukkit.managers;
 
+import net.frankheijden.serverutils.bukkit.entities.BukkitPluginDescription;
+import net.frankheijden.serverutils.bukkit.events.BukkitPluginDisableEvent;
+import net.frankheijden.serverutils.bukkit.events.BukkitPluginEnableEvent;
+import net.frankheijden.serverutils.bukkit.events.BukkitPluginLoadEvent;
+import net.frankheijden.serverutils.bukkit.events.BukkitPluginUnloadEvent;
+import net.frankheijden.serverutils.bukkit.reflection.RCommandDispatcher;
+import net.frankheijden.serverutils.bukkit.reflection.RCommandMap;
+import net.frankheijden.serverutils.bukkit.reflection.RCraftServer;
+import net.frankheijden.serverutils.bukkit.reflection.RCraftingManager;
+import net.frankheijden.serverutils.bukkit.reflection.RJavaPlugin;
+import net.frankheijden.serverutils.bukkit.reflection.RJavaPluginLoader;
+import net.frankheijden.serverutils.bukkit.reflection.RPluginClassLoader;
+import net.frankheijden.serverutils.bukkit.reflection.RSimplePluginManager;
+import net.frankheijden.serverutils.common.entities.exceptions.InvalidPluginDescriptionException;
+import net.frankheijden.serverutils.common.entities.results.CloseablePluginResults;
+import net.frankheijden.serverutils.common.entities.results.PluginResults;
+import net.frankheijden.serverutils.common.entities.results.Result;
+import net.frankheijden.serverutils.common.events.PluginEvent;
+import net.frankheijden.serverutils.common.managers.AbstractPluginManager;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.PluginIdentifiableCommand;
+import org.bukkit.plugin.InvalidDescriptionException;
+import org.bukkit.plugin.InvalidPluginException;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginLoader;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.UnknownDependencyException;
+
 import java.io.Closeable;
 import java.io.File;
 import java.util.ArrayList;
@@ -15,35 +46,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import net.frankheijden.serverutils.bukkit.entities.BukkitPluginDescription;
-import net.frankheijden.serverutils.bukkit.events.BukkitPluginDisableEvent;
-import net.frankheijden.serverutils.bukkit.events.BukkitPluginEnableEvent;
-import net.frankheijden.serverutils.bukkit.events.BukkitPluginLoadEvent;
-import net.frankheijden.serverutils.bukkit.events.BukkitPluginUnloadEvent;
-import net.frankheijden.serverutils.bukkit.reflection.RCommandDispatcher;
-import net.frankheijden.serverutils.bukkit.reflection.RCommandMap;
-import net.frankheijden.serverutils.bukkit.reflection.RCraftServer;
-import net.frankheijden.serverutils.bukkit.reflection.RCraftingManager;
-import net.frankheijden.serverutils.bukkit.reflection.RJavaPlugin;
-import net.frankheijden.serverutils.bukkit.reflection.RJavaPluginLoader;
-import net.frankheijden.serverutils.bukkit.reflection.RPluginClassLoader;
-import net.frankheijden.serverutils.bukkit.reflection.RSimplePluginManager;
-import net.frankheijden.serverutils.common.entities.results.CloseablePluginResults;
-import net.frankheijden.serverutils.common.entities.results.PluginResults;
-import net.frankheijden.serverutils.common.entities.results.Result;
-import net.frankheijden.serverutils.common.entities.exceptions.InvalidPluginDescriptionException;
-import net.frankheijden.serverutils.common.events.PluginEvent;
-import net.frankheijden.serverutils.common.managers.AbstractPluginManager;
-import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.PluginCommand;
-import org.bukkit.command.PluginIdentifiableCommand;
-import org.bukkit.plugin.InvalidDescriptionException;
-import org.bukkit.plugin.InvalidPluginException;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginLoader;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.UnknownDependencyException;
 
 public class BukkitPluginManager extends AbstractPluginManager<Plugin, BukkitPluginDescription> {
 
@@ -72,7 +74,7 @@ public class BukkitPluginManager extends AbstractPluginManager<Plugin, BukkitPlu
                 return pluginResults.addResult(pluginId, Result.INVALID_DESCRIPTION);
             } catch (UnknownDependencyException ex) {
                 return pluginResults.addResult(pluginId, Result.UNKNOWN_DEPENDENCY,
-                        "dependency", ex.getMessage()
+                        Placeholder.unparsed("dependency", ex.getMessage())
                 );
             } catch (InvalidPluginException ex) {
                 if (ex.getCause() instanceof IllegalArgumentException) {
@@ -152,7 +154,6 @@ public class BukkitPluginManager extends AbstractPluginManager<Plugin, BukkitPlu
             try {
                 RSimplePluginManager.getPlugins(Bukkit.getPluginManager()).remove(plugin);
                 RSimplePluginManager.removeLookupName(Bukkit.getPluginManager(), pluginId);
-
                 ClassLoader classLoader = plugin.getClass().getClassLoader();
                 PluginLoader loader = RPluginClassLoader.getLoader(classLoader);
                 Map<String, Class<?>> classes = RPluginClassLoader.getClasses(classLoader);

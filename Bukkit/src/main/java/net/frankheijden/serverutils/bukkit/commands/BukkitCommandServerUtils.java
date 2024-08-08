@@ -1,15 +1,5 @@
 package net.frankheijden.serverutils.bukkit.commands;
 
-import cloud.commandframework.CommandManager;
-import cloud.commandframework.arguments.CommandArgument;
-import cloud.commandframework.context.CommandContext;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import dev.frankheijden.minecraftreflection.MinecraftReflectionVersion;
 import net.frankheijden.serverutils.bukkit.config.BukkitMessageKey;
 import net.frankheijden.serverutils.bukkit.entities.BukkitAudience;
@@ -20,20 +10,33 @@ import net.frankheijden.serverutils.bukkit.reflection.RDedicatedServer;
 import net.frankheijden.serverutils.bukkit.utils.ReloadHandler;
 import net.frankheijden.serverutils.bukkit.utils.VersionReloadHandler;
 import net.frankheijden.serverutils.common.commands.CommandServerUtils;
-import net.frankheijden.serverutils.common.commands.arguments.PluginsArgument;
 import net.frankheijden.serverutils.common.config.MessageKey;
 import net.frankheijden.serverutils.common.config.MessagesResource;
 import net.frankheijden.serverutils.common.entities.results.PluginResults;
-import net.frankheijden.serverutils.common.utils.KeyValueComponentBuilder;
 import net.frankheijden.serverutils.common.utils.ForwardFilter;
+import net.frankheijden.serverutils.common.utils.KeyValueComponentBuilder;
 import net.frankheijden.serverutils.common.utils.ListComponentBuilder;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.Template;
+import net.kyori.adventure.text.minimessage.tag.Tag;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.PluginIdentifiableCommand;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.incendo.cloud.CommandManager;
+import org.incendo.cloud.component.CommandComponent;
+import org.incendo.cloud.context.CommandContext;
+import org.incendo.cloud.suggestion.BlockingSuggestionProvider;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, Plugin, BukkitAudience> {
 
@@ -53,13 +56,13 @@ public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, P
     }
 
     public BukkitCommandServerUtils(BukkitPlugin plugin) {
-        super(plugin, Plugin[]::new);
+        super(plugin, Plugin[]::new, Plugin.class);
     }
 
     @Override
     public void register(
             CommandManager<BukkitAudience> manager,
-            cloud.commandframework.Command.Builder<BukkitAudience> builder
+            org.incendo.cloud.Command.Builder<BukkitAudience> builder
     ) {
         super.register(manager, builder);
 
@@ -73,28 +76,24 @@ public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, P
                 })
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
-        addArgument(CommandArgument.<BukkitAudience, String>ofType(String.class, "config")
-                .manager(manager)
-                .withSuggestionsProvider((context, s) -> supportedConfigNames)
-                .build());
+        CommandComponent<BukkitAudience> configComponent = CommandComponent.<BukkitAudience, String>builder()
+                .name("config")
+                .suggestionProvider((BlockingSuggestionProvider.Strings<BukkitAudience>) (context, s) -> supportedConfigNames)
+                .build();
 
         registerSubcommand(manager, builder, "enableplugin", subcommandBuilder -> subcommandBuilder
-                .argument(getArgument("plugins"))
+                .argument(getComponent("plugins"))
                 .handler(this::handleEnablePlugin));
         registerSubcommand(manager, builder, "disableplugin", subcommandBuilder -> subcommandBuilder
-                .argument(new PluginsArgument<>(
-                        true,
-                        "plugins",
-                        new PluginsArgument.PluginsParser<>(plugin, arrayCreator, getRawPath("disableplugin"))
-                ))
+                .required("plugins", pluginsParser(getRawPath("disableplugin")))
                 .handler(this::handleDisablePlugin));
         registerSubcommand(manager, builder, "reloadconfig", subcommandBuilder -> subcommandBuilder
-                .argument(getArgument("config"))
+                .argument(getComponent("config"))
                 .handler(this::handleReloadConfig));
     }
 
     private void handleEnablePlugin(CommandContext<BukkitAudience> context) {
-        BukkitAudience sender = context.getSender();
+        BukkitAudience sender = context.sender();
         List<Plugin> plugins = Arrays.asList(context.get("plugins"));
 
         PluginResults<Plugin> enableResults = plugin.getPluginManager().enablePlugins(plugins);
@@ -102,7 +101,7 @@ public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, P
     }
 
     private void handleDisablePlugin(CommandContext<BukkitAudience> context) {
-        BukkitAudience sender = context.getSender();
+        BukkitAudience sender = context.sender();
         List<Plugin> plugins = Arrays.asList(context.get("plugins"));
 
         if (checkProtectedPlugins(sender, plugins)) {
@@ -118,7 +117,7 @@ public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, P
     }
 
     private void handleReloadConfig(CommandContext<BukkitAudience> context) {
-        BukkitAudience sender = context.getSender();
+        BukkitAudience sender = context.sender();
         String config = context.get("config");
 
         MessagesResource messages = plugin.getMessagesResource();
@@ -126,7 +125,7 @@ public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, P
         if (handler == null) {
             messages.get(BukkitMessageKey.RELOADCONFIG_NOT_EXISTS).sendTo(
                     sender,
-                    Template.of("config", config)
+                    Placeholder.unparsed("config", config)
             );
             return;
         }
@@ -138,7 +137,7 @@ public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, P
             if (MinecraftReflectionVersion.MINOR > max) {
                 messages.get(BukkitMessageKey.RELOADCONFIG_NOT_SUPPORTED).sendTo(
                         sender,
-                        Template.of("config", config)
+                        Placeholder.unparsed("config", config)
                 );
                 return;
             }
@@ -153,7 +152,8 @@ public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, P
             BukkitMessageKey key = filter.hasWarnings()
                     ? BukkitMessageKey.RELOADCONFIG_WARNINGS
                     : BukkitMessageKey.RELOADCONFIG_SUCCESS;
-            plugin.getMessagesResource().get(key).sendTo(sender, Template.of("config", config));
+            TagResolver.builder().tag("config", Tag.selfClosingInserting(Component.text(config)));
+            plugin.getMessagesResource().get(key).sendTo(sender, Placeholder.unparsed("config", config));
         } catch (Exception ex) {
             filter.stop(Bukkit.getLogger());
 

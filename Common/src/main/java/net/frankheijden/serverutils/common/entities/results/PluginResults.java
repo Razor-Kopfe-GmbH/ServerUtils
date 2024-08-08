@@ -5,8 +5,11 @@ import java.util.Iterator;
 import java.util.List;
 import net.frankheijden.serverutils.common.config.ConfigKey;
 import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 public class PluginResults<T> implements Iterable<PluginResult<T>> {
+
+    private static final TagResolver[] EMPTY = new TagResolver[0];
 
     protected final List<PluginResult<T>> results;
 
@@ -14,17 +17,22 @@ public class PluginResults<T> implements Iterable<PluginResult<T>> {
         this.results = new ArrayList<>();
     }
 
-    public PluginResults<T> addResult(String pluginId, Result result, String... placeholders) {
+    public PluginResults<T> addResult(String pluginId, Result result) {
+        addResult(pluginId, null, result, EMPTY);
+        return this;
+    }
+
+    public PluginResults<T> addResult(String pluginId, Result result, TagResolver... placeholders) {
         addResult(pluginId, null, result, placeholders);
         return this;
     }
 
-    public PluginResults<T> addResult(String pluginId, T plugin, String... placeholders) {
+    public PluginResults<T> addResult(String pluginId, T plugin, TagResolver... placeholders) {
         addResult(pluginId, plugin, Result.SUCCESS, placeholders);
         return this;
     }
 
-    protected PluginResults<T> addResult(String pluginId, T plugin, Result result, String... placeholders) {
+    protected PluginResults<T> addResult(String pluginId, T plugin, Result result, TagResolver... placeholders) {
         addResult(new PluginResult<>(pluginId, plugin, result, placeholders));
         return this;
     }

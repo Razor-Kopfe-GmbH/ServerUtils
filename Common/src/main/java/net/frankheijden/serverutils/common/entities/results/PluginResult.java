@@ -3,13 +3,15 @@ package net.frankheijden.serverutils.common.entities.results;
 import net.frankheijden.serverutils.common.ServerUtilsApp;
 import net.frankheijden.serverutils.common.config.ConfigKey;
 import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 public class PluginResult<T> implements AbstractResult {
 
     private final String pluginId;
     private final T plugin;
     private final Result result;
-    private final String[] placeholders;
+    private final TagResolver[] placeholders;
 
     public PluginResult(String pluginId, Result result) {
         this(pluginId, null, result);
@@ -18,14 +20,13 @@ public class PluginResult<T> implements AbstractResult {
     /**
      * Constructs a new PluginResult.
      */
-    public PluginResult(String pluginId, T plugin, Result result, String... placeholders) {
+    public PluginResult(String pluginId, T plugin, Result result, TagResolver... placeholders) {
         this.pluginId = pluginId;
         this.plugin = plugin;
         this.result = result;
-        this.placeholders = new String[placeholders.length + 2];
-        this.placeholders[0] = "plugin";
-        this.placeholders[1] = pluginId;
-        System.arraycopy(placeholders, 0, this.placeholders, 2, placeholders.length);
+        this.placeholders = new TagResolver[placeholders.length + 2];
+        this.placeholders[0] = Placeholder.unparsed("plugin", pluginId);
+        System.arraycopy(placeholders, 0, this.placeholders, 1, placeholders.length);
     }
 
     public String getPluginId() {
@@ -40,7 +41,7 @@ public class PluginResult<T> implements AbstractResult {
         return result;
     }
 
-    public String[] getPlaceholders() {
+    public TagResolver[] getPlaceholders() {
         return placeholders;
     }
 

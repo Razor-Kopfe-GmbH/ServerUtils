@@ -1,8 +1,8 @@
 package net.frankheijden.serverutils.bukkit.commands;
 
-import cloud.commandframework.Command;
-import cloud.commandframework.CommandManager;
-import cloud.commandframework.context.CommandContext;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.CommandManager;
+import org.incendo.cloud.context.CommandContext;
 import net.frankheijden.serverutils.bukkit.entities.BukkitAudience;
 import net.frankheijden.serverutils.bukkit.entities.BukkitPlugin;
 import net.frankheijden.serverutils.bukkit.entities.BukkitPluginDescription;
@@ -28,7 +28,7 @@ public class BukkitCommandPlugins extends CommandPlugins<BukkitPlugin, Plugin, B
 
     @Override
     protected void handlePlugins(CommandContext<BukkitAudience> context) {
-        BukkitAudience sender = context.getSender();
+        BukkitAudience sender = context.sender();
         boolean hasVersionFlag = context.flags().contains("version");
 
         handlePlugins(sender, plugin.getPluginManager().getPluginsSorted(), hasVersionFlag);

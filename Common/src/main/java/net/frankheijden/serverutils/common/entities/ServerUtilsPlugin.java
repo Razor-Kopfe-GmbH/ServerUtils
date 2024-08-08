@@ -1,8 +1,8 @@
 package net.frankheijden.serverutils.common.entities;
 
-import cloud.commandframework.Command;
-import cloud.commandframework.CommandManager;
-import cloud.commandframework.brigadier.CloudBrigadierManager;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.CommandManager;
+import org.incendo.cloud.brigadier.CloudBrigadierManager;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -75,7 +75,7 @@ public abstract class ServerUtilsPlugin<P, T, C extends ServerUtilsAudience<S>, 
     public abstract File getDataFolder();
 
     public Collection<Command<C>> getCommands() {
-        return commandManager.getCommands();
+        return commandManager.commands();
     }
 
     public void createDataFolderIfNotExists() {

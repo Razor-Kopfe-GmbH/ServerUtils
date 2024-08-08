@@ -6,6 +6,7 @@ import java.util.List;
 import net.frankheijden.serverutils.common.ServerUtilsApp;
 import net.frankheijden.serverutils.common.config.MessagesResource;
 import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 public class PluginWatchResults implements Iterable<PluginWatchResult> {
 
@@ -15,7 +16,7 @@ public class PluginWatchResults implements Iterable<PluginWatchResult> {
         this.watchResults = new ArrayList<>();
     }
 
-    public PluginWatchResults add(WatchResult result, String... placeholders) {
+    public PluginWatchResults add(WatchResult result, TagResolver... placeholders) {
         return add(new PluginWatchResult(result, placeholders));
     }
 

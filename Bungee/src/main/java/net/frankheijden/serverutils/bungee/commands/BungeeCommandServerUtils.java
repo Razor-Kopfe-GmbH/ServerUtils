@@ -20,7 +20,7 @@ import net.md_5.bungee.api.plugin.PluginManager;
 public class BungeeCommandServerUtils extends CommandServerUtils<BungeePlugin, Plugin, BungeeAudience> {
 
     public BungeeCommandServerUtils(BungeePlugin plugin) {
-        super(plugin, Plugin[]::new);
+        super(plugin, Plugin[]::new, Plugin.class);
     }
 
     @Override

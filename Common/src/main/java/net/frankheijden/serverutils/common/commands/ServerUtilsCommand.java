@@ -1,12 +1,12 @@
 package net.frankheijden.serverutils.common.commands;
 
-import cloud.commandframework.ArgumentDescription;
-import cloud.commandframework.Command;
-import cloud.commandframework.CommandManager;
-import cloud.commandframework.arguments.CommandArgument;
-import cloud.commandframework.arguments.flags.CommandFlag;
-import cloud.commandframework.permission.CommandPermission;
-import cloud.commandframework.permission.Permission;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.CommandManager;
+import org.incendo.cloud.component.CommandComponent;
+import org.incendo.cloud.description.Description;
+import org.incendo.cloud.parser.ParserDescriptor;
+import org.incendo.cloud.parser.flag.CommandFlag;
+import org.incendo.cloud.permission.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,14 +23,14 @@ public abstract class ServerUtilsCommand<U extends ServerUtilsPlugin<?, ?, C, ?,
     protected final U plugin;
     protected final String commandName;
     protected final ServerUtilsConfig commandConfig;
-    protected final Map<String, CommandArgument<C, ?>> arguments;
+    protected final Map<String, CommandComponent<C>> components;
 
     protected ServerUtilsCommand(U plugin, String commandName) {
         this.plugin = plugin;
         this.commandName = commandName;
         this.commandConfig = (ServerUtilsConfig) plugin.getCommandsResource().getConfig()
                 .get("commands." + commandName);
-        this.arguments = new HashMap<>();
+        this.components = new HashMap<>();
     }
 
     /**
@@ -50,12 +50,30 @@ public abstract class ServerUtilsCommand<U extends ServerUtilsPlugin<?, ?, C, ?,
 
     protected abstract void register(CommandManager<C> manager, Command.Builder<C> builder);
 
-    public <A> void addArgument(CommandArgument<C, A> argument) {
-        this.arguments.put(argument.getName(), argument);
+    public void addComponent(CommandComponent<C> component) {
+        this.components.put(component.name(), component);
     }
 
-    public CommandArgument<C, ?> getArgument(String name) {
-        return this.arguments.get(name).copy();
+    public <T> void addRequiredComponent(String name, ParserDescriptor<C, T> parser) {
+        var component = CommandComponent.<C, T>builder()
+                .name(name)
+                .required(true)
+                .parser(parser)
+                .build();
+        addComponent(component);
+    }
+
+    public <T> void addOptionalComponent(String name, ParserDescriptor<C, T> parser) {
+        var component = CommandComponent.<C, T>builder()
+                .name(name)
+                .required(false)
+                .parser(parser)
+                .build();
+        addComponent(component);
+    }
+
+    public CommandComponent<C> getComponent(String name) {
+        return this.components.get(name);
     }
 
     /**
@@ -90,8 +108,8 @@ public abstract class ServerUtilsCommand<U extends ServerUtilsPlugin<?, ?, C, ?,
     public CommandElement parseElement(ServerUtilsConfig elementConfig) {
         String main = applyPrefix(elementConfig.getString("main"));
         String descriptionString = elementConfig.getString("description");
-        ArgumentDescription description = descriptionString == null ? null : ArgumentDescription.of(descriptionString);
-        CommandPermission permission = Permission.of(elementConfig.getString("permission"));
+        Description description = descriptionString == null ? null : Description.of(descriptionString);
+        Permission permission = Permission.of(elementConfig.getString("permission"));
         boolean displayInHelp = elementConfig.getBoolean("display-in-help");
         String[] aliases = elementConfig.getStringList("aliases").stream()
                 .map(this::applyPrefix)
@@ -131,7 +149,7 @@ public abstract class ServerUtilsCommand<U extends ServerUtilsPlugin<?, ?, C, ?,
      * Creates a flag from a CommandElement.
      */
     public CommandFlag<Void> createFlag(CommandElement flagElement) {
-        return CommandFlag.newBuilder(flagElement.getMain())
+        return CommandFlag.builder(flagElement.getMain())
                 .withAliases(flagElement.getAliases())
                 .withPermission(flagElement.getPermission())
                 .withDescription(flagElement.getDescription())
@@ -160,16 +178,16 @@ public abstract class ServerUtilsCommand<U extends ServerUtilsPlugin<?, ?, C, ?,
     protected static class CommandElement {
 
         private final String main;
-        private final ArgumentDescription description;
-        private final CommandPermission permission;
+        private final Description description;
+        private final Permission permission;
         private final boolean displayInHelp;
         private final String[] aliases;
         private final List<CommandElement> flags;
 
         public CommandElement(
                 String main,
-                ArgumentDescription description,
-                CommandPermission permission,
+                Description description,
+                Permission permission,
                 boolean displayInHelp,
                 String[] aliases,
                 List<CommandElement> flags
@@ -186,11 +204,11 @@ public abstract class ServerUtilsCommand<U extends ServerUtilsPlugin<?, ?, C, ?,
             return main;
         }
 
-        public ArgumentDescription getDescription() {
+        public Description getDescription() {
             return description;
         }
 
-        public CommandPermission getPermission() {
+        public Permission getPermission() {
             return permission;
         }
 

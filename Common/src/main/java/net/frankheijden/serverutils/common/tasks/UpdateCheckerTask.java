@@ -2,6 +2,24 @@ package net.frankheijden.serverutils.common.tasks;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.frankheijden.serverutils.common.ServerUtilsApp;
+import net.frankheijden.serverutils.common.config.ConfigKey;
+import net.frankheijden.serverutils.common.config.MessageKey;
+import net.frankheijden.serverutils.common.config.ServerUtilsConfig;
+import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
+import net.frankheijden.serverutils.common.entities.ServerUtilsPlugin;
+import net.frankheijden.serverutils.common.entities.http.GitHubAsset;
+import net.frankheijden.serverutils.common.entities.http.GitHubResponse;
+import net.frankheijden.serverutils.common.entities.results.PluginResult;
+import net.frankheijden.serverutils.common.entities.results.Result;
+import net.frankheijden.serverutils.common.managers.AbstractPluginManager;
+import net.frankheijden.serverutils.common.managers.UpdateManager;
+import net.frankheijden.serverutils.common.utils.GitHubUtils;
+import net.frankheijden.serverutils.common.utils.VersionUtils;
+import net.frankheijden.serverutilsupdater.common.Updater;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,23 +27,6 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
-import net.frankheijden.serverutils.common.ServerUtilsApp;
-import net.frankheijden.serverutils.common.config.ConfigKey;
-import net.frankheijden.serverutils.common.config.MessageKey;
-import net.frankheijden.serverutils.common.config.ServerUtilsConfig;
-import net.frankheijden.serverutils.common.entities.results.PluginResult;
-import net.frankheijden.serverutils.common.entities.results.Result;
-import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
-import net.frankheijden.serverutils.common.entities.ServerUtilsPlugin;
-import net.frankheijden.serverutils.common.entities.http.GitHubAsset;
-import net.frankheijden.serverutils.common.entities.http.GitHubResponse;
-import net.frankheijden.serverutils.common.managers.AbstractPluginManager;
-import net.frankheijden.serverutils.common.managers.UpdateManager;
-import net.frankheijden.serverutils.common.utils.GitHubUtils;
-import net.frankheijden.serverutils.common.utils.VersionUtils;
-import net.frankheijden.serverutilsupdater.common.Updater;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.Template;
 
 public class UpdateCheckerTask<U extends ServerUtilsPlugin<P, ?, ?, ?, ?>, P> implements Runnable {
 
@@ -136,9 +137,9 @@ public class UpdateCheckerTask<U extends ServerUtilsPlugin<P, ?, ?, ?, ?>, P> im
         if (!download || pluginAsset == null) {
             if (sender.isPlayer()) {
                 Component component = plugin.getMessagesResource().get(MessageKey.UPDATE_AVAILABLE).toComponent(
-                        Template.of("old", ServerUtilsApp.VERSION),
-                        Template.of("new", githubVersion),
-                        Template.of("info", body)
+                        Placeholder.unparsed("old", ServerUtilsApp.VERSION),
+                        Placeholder.unparsed("new", githubVersion),
+                        Placeholder.unparsed("info", body)
                 );
                 sender.sendMessage(component);
             }
@@ -148,9 +149,9 @@ public class UpdateCheckerTask<U extends ServerUtilsPlugin<P, ?, ?, ?, ?>, P> im
         plugin.getLogger().log(Level.INFO, DOWNLOAD_START, pluginAsset.getDownloadUrl());
         if (sender.isPlayer()) {
             Component component = plugin.getMessagesResource().get(MessageKey.UPDATE_DOWNLOADING).toComponent(
-                    Template.of("old", ServerUtilsApp.VERSION),
-                    Template.of("new", githubVersion),
-                    Template.of("info", body)
+                    Placeholder.unparsed("old", ServerUtilsApp.VERSION),
+                    Placeholder.unparsed("new", githubVersion),
+                    Placeholder.unparsed("info", body)
             );
             sender.sendMessage(component);
         }
@@ -286,7 +287,9 @@ public class UpdateCheckerTask<U extends ServerUtilsPlugin<P, ?, ?, ?, ?>, P> im
 
     private void broadcastDownloadStatus(String githubVersion, boolean isError) {
         ConfigKey key = isError ? MessageKey.UPDATE_DOWNLOAD_FAILED : MessageKey.UPDATE_DOWNLOAD_SUCCESS;
-        Component component = plugin.getMessagesResource().get(key).toComponent(Template.of("new", githubVersion));
+        Component component = plugin.getMessagesResource()
+                .get(key)
+                .toComponent(Placeholder.unparsed("new", githubVersion));
         plugin.getChatProvider().broadcast(component, "serverutils.notification.update");
     }
 }

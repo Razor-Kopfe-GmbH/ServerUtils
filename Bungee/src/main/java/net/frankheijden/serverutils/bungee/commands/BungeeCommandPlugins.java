@@ -1,8 +1,8 @@
 package net.frankheijden.serverutils.bungee.commands;
 
-import cloud.commandframework.Command;
-import cloud.commandframework.CommandManager;
-import cloud.commandframework.context.CommandContext;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.CommandManager;
+import org.incendo.cloud.context.CommandContext;
 import net.frankheijden.serverutils.bungee.entities.BungeeAudience;
 import net.frankheijden.serverutils.bungee.entities.BungeePlugin;
 import net.frankheijden.serverutils.bungee.entities.BungeePluginDescription;
@@ -29,7 +29,7 @@ public class BungeeCommandPlugins extends CommandPlugins<BungeePlugin, Plugin, B
 
     @Override
     protected void handlePlugins(CommandContext<BungeeAudience> context) {
-        BungeeAudience sender = context.getSender();
+        BungeeAudience sender = context.sender();
         boolean hasVersionFlag = context.flags().contains("version");
         boolean hasModulesFlag = context.flags().contains("modules");
 

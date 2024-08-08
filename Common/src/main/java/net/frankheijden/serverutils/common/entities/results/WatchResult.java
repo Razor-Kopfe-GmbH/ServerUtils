@@ -5,7 +5,7 @@ import net.frankheijden.serverutils.common.config.ConfigKey;
 import net.frankheijden.serverutils.common.config.MessageKey;
 import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.Template;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 public enum WatchResult implements AbstractResult {
     START(MessageKey.WATCHPLUGIN_START),
@@ -23,8 +23,8 @@ public enum WatchResult implements AbstractResult {
         this.key = key;
     }
 
-    public void sendTo(ServerUtilsAudience<?> sender, Template... templates) {
-        Component component = ServerUtilsApp.getPlugin().getMessagesResource().get(key).toComponent(templates);
+    public void sendTo(ServerUtilsAudience<?> sender, TagResolver... tagResolvers) {
+        Component component = ServerUtilsApp.getPlugin().getMessagesResource().get(key).toComponent(tagResolvers);
         sender.sendMessage(component);
     }
 

@@ -17,17 +17,16 @@ repositories {
 }
 
 dependencies {
-    implementation("cloud.commandframework:cloud-bungee:${VersionConstants.cloudVersion}")
+    implementation("org.incendo:cloud-bungee:${VersionConstants.cloudMinecraftVersion}")
     implementation("net.kyori:adventure-api:${VersionConstants.adventureVersion}") {
         exclude("net.kyori", "adventure-text-minimessage")
     }
+
     implementation("net.kyori:adventure-platform-bungeecord:${VersionConstants.adventurePlatformVersion}") {
         exclude("net.kyori", "adventure-api")
-        exclude("net.kyori", "adventure-text-minimessage")
     }
-    implementation("net.kyori:adventure-text-minimessage:${VersionConstants.adventureMinimessageVersion}") {
-        exclude("net.kyori", "adventure-api")
-    }
+
+    implementation("net.kyori:adventure-text-minimessage:${VersionConstants.adventureVersion}")
     implementation("org.bstats:bstats-bungeecord:${VersionConstants.bstatsVersion}")
     implementation(project(":Common"))
     compileOnly("net.md-5:bungeecord-api:1.19-R0.1-SNAPSHOT")

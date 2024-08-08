@@ -1,12 +1,8 @@
 package net.frankheijden.serverutils.velocity.entities;
 
-import cloud.commandframework.execution.AsynchronousCommandExecutionCoordinator;
-import cloud.commandframework.velocity.VelocityCommandManager;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
-import java.io.File;
-import java.util.logging.Logger;
 import net.frankheijden.serverutils.common.entities.ServerUtilsPlugin;
 import net.frankheijden.serverutils.velocity.ServerUtils;
 import net.frankheijden.serverutils.velocity.commands.VelocityCommandPlugins;
@@ -14,6 +10,12 @@ import net.frankheijden.serverutils.velocity.commands.VelocityCommandServerUtils
 import net.frankheijden.serverutils.velocity.listeners.VelocityPlayerListener;
 import net.frankheijden.serverutils.velocity.managers.VelocityPluginManager;
 import net.frankheijden.serverutils.velocity.managers.VelocityTaskManager;
+import org.incendo.cloud.SenderMapper;
+import org.incendo.cloud.execution.ExecutionCoordinator;
+import org.incendo.cloud.velocity.VelocityCommandManager;
+
+import java.io.File;
+import java.util.logging.Logger;
 
 public class VelocityPlugin extends ServerUtilsPlugin<PluginContainer, ScheduledTask, VelocityAudience, CommandSource, VelocityPluginDescription> {
 
@@ -44,9 +46,8 @@ public class VelocityPlugin extends ServerUtilsPlugin<PluginContainer, Scheduled
         VelocityCommandManager<VelocityAudience> commandManager = new VelocityCommandManager<>(
                 plugin.getPluginContainer(),
                 plugin.getProxy(),
-                AsynchronousCommandExecutionCoordinator.<VelocityAudience>newBuilder().build(),
-                chatProvider::get,
-                VelocityAudience::getSource
+                ExecutionCoordinator.asyncCoordinator(),
+                SenderMapper.create(chatProvider::get, VelocityAudience::getSource)
         );
         handleBrigadier(commandManager.brigadierManager());
         return commandManager;

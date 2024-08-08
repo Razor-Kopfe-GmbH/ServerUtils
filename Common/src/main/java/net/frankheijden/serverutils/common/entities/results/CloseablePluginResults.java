@@ -1,5 +1,7 @@
 package net.frankheijden.serverutils.common.entities.results;
 
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
@@ -23,20 +25,30 @@ public class CloseablePluginResults<T> extends PluginResults<T> implements Close
         return this;
     }
 
+    public CloseablePluginResults() {
+        super();
+    }
+
     @Override
-    public CloseablePluginResults<T> addResult(String pluginId, Result result, String... placeholders) {
+    public CloseablePluginResults<T> addResult(String pluginId, Result result) {
+        super.addResult(pluginId, result);
+        return this;
+    }
+
+    @Override
+    public CloseablePluginResults<T> addResult(String pluginId, Result result, TagResolver... placeholders) {
         super.addResult(pluginId, result, placeholders);
         return this;
     }
 
     @Override
-    public CloseablePluginResults<T> addResult(String pluginId, T plugin, String... placeholders) {
+    public CloseablePluginResults<T> addResult(String pluginId, T plugin, TagResolver... placeholders) {
         super.addResult(pluginId, plugin, placeholders);
         return this;
     }
 
     @Override
-    protected CloseablePluginResults<T> addResult(String pluginId, T plugin, Result result, String... placeholders) {
+    protected CloseablePluginResults<T> addResult(String pluginId, T plugin, Result result, TagResolver... placeholders) {
         return addResult(new CloseablePluginResult<>(pluginId, plugin, result, Collections.emptyList(), placeholders));
     }
 
@@ -44,7 +56,7 @@ public class CloseablePluginResults<T> extends PluginResults<T> implements Close
             String pluginId,
             T plugin,
             List<Closeable> closeables,
-            String... placeholders
+            TagResolver... placeholders
     ) {
         return addResult(new CloseablePluginResult<>(pluginId, plugin, Result.SUCCESS, closeables, placeholders));
     }

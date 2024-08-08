@@ -1,11 +1,5 @@
 package net.frankheijden.serverutils.bukkit.entities;
 
-import cloud.commandframework.bukkit.CloudBukkitCapabilities;
-import cloud.commandframework.execution.CommandExecutionCoordinator;
-import cloud.commandframework.paper.PaperCommandManager;
-import java.io.File;
-import java.util.Arrays;
-import java.util.logging.Logger;
 import net.frankheijden.serverutils.bukkit.ServerUtils;
 import net.frankheijden.serverutils.bukkit.commands.BukkitCommandPlugins;
 import net.frankheijden.serverutils.bukkit.commands.BukkitCommandServerUtils;
@@ -14,11 +8,18 @@ import net.frankheijden.serverutils.bukkit.listeners.BukkitPlayerListener;
 import net.frankheijden.serverutils.bukkit.managers.BukkitPluginManager;
 import net.frankheijden.serverutils.bukkit.managers.BukkitTaskManager;
 import net.frankheijden.serverutils.common.entities.ServerUtilsPlugin;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.incendo.cloud.SenderMapper;
+import org.incendo.cloud.bukkit.CloudBukkitCapabilities;
+import org.incendo.cloud.execution.ExecutionCoordinator;
+import org.incendo.cloud.paper.LegacyPaperCommandManager;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.logging.Logger;
 
 public class BukkitPlugin extends ServerUtilsPlugin<Plugin, BukkitTask, BukkitAudience, CommandSender, BukkitPluginDescription> {
 
@@ -26,7 +27,6 @@ public class BukkitPlugin extends ServerUtilsPlugin<Plugin, BukkitTask, BukkitAu
     private final BukkitPluginManager pluginManager;
     private final BukkitTaskManager taskManager;
     private final BukkitResourceProvider resourceProvider;
-    private final BukkitAudiences audiences;
     private final BukkitAudienceProvider chatProvider;
     private boolean registeredPluginsCommand;
 
@@ -39,37 +39,24 @@ public class BukkitPlugin extends ServerUtilsPlugin<Plugin, BukkitTask, BukkitAu
         this.pluginManager = new BukkitPluginManager();
         this.taskManager = new BukkitTaskManager();
         this.resourceProvider = new BukkitResourceProvider(plugin);
-        this.audiences = BukkitAudiences.create(plugin);
-        this.chatProvider = new BukkitAudienceProvider(plugin, this.audiences);
+        this.chatProvider = new BukkitAudienceProvider(plugin);
         this.registeredPluginsCommand = false;
     }
 
     @Override
-    protected PaperCommandManager<BukkitAudience> newCommandManager() {
-        PaperCommandManager<BukkitAudience> commandManager;
+    protected LegacyPaperCommandManager<BukkitAudience> newCommandManager() {
+        LegacyPaperCommandManager<BukkitAudience> commandManager;
         try {
-            commandManager = new PaperCommandManager<>(
+            commandManager = new LegacyPaperCommandManager<>(
                     plugin,
-                    CommandExecutionCoordinator.simpleCoordinator(),
-                    chatProvider::get,
-                    BukkitAudience::getSource
-            );
+                    ExecutionCoordinator.simpleCoordinator(),
+                    SenderMapper.create(chatProvider::get, BukkitAudience::getSource));
+            if (commandManager.hasCapability(CloudBukkitCapabilities.BRIGADIER)) {
+                commandManager.registerBrigadier();
+            }
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
-
-        boolean hasBrigadier = commandManager.hasCapability(CloudBukkitCapabilities.BRIGADIER);
-        boolean hasNativeBrigadier = commandManager.hasCapability(CloudBukkitCapabilities.NATIVE_BRIGADIER);
-        boolean hasCommodoreBrigadier = commandManager.hasCapability(CloudBukkitCapabilities.COMMODORE_BRIGADIER);
-        if (hasBrigadier && (hasNativeBrigadier || hasCommodoreBrigadier)) {
-            commandManager.registerBrigadier();
-            handleBrigadier(commandManager.brigadierManager());
-        }
-
-        if (commandManager.hasCapability(CloudBukkitCapabilities.ASYNCHRONOUS_COMPLETION)) {
-            commandManager.registerAsynchronousCompletions();
-        }
-
         return commandManager;
     }
 
@@ -120,7 +107,7 @@ public class BukkitPlugin extends ServerUtilsPlugin<Plugin, BukkitTask, BukkitAu
 
     @Override
     protected void disablePlugin() {
-        this.audiences.close();
+
     }
 
     @Override

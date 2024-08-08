@@ -17,10 +17,10 @@ repositories {
 }
 
 dependencies {
-    implementation("cloud.commandframework:cloud-velocity:${VersionConstants.cloudVersion}")
+    implementation("org.incendo:cloud-velocity:${VersionConstants.cloudMinecraftVersion}")
     implementation("org.bstats:bstats-velocity:${VersionConstants.bstatsVersion}")
     implementation(project(":Common"))
-    implementation("net.kyori:adventure-text-minimessage:${VersionConstants.adventureMinimessageVersion}") {
+    implementation("net.kyori:adventure-text-minimessage:${VersionConstants.adventureVersion}") {
         exclude("net.kyori", "adventure-api")
     }
     compileOnly("com.velocitypowered:velocity-api:3.1.2-SNAPSHOT")

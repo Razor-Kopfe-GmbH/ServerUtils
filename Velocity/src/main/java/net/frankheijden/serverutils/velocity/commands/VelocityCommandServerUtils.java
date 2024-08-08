@@ -23,7 +23,7 @@ import net.kyori.adventure.text.Component;
 public class VelocityCommandServerUtils extends CommandServerUtils<VelocityPlugin, PluginContainer, VelocityAudience> {
 
     public VelocityCommandServerUtils(VelocityPlugin plugin) {
-        super(plugin, PluginContainer[]::new);
+        super(plugin, PluginContainer[]::new, PluginContainer.class);
     }
 
     @Override

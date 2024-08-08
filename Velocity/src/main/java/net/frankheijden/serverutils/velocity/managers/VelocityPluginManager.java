@@ -44,6 +44,7 @@ import net.frankheijden.serverutils.velocity.reflection.RVelocityEventManager;
 import net.frankheijden.serverutils.velocity.reflection.RVelocityPluginContainer;
 import net.frankheijden.serverutils.velocity.reflection.RVelocityPluginManager;
 import net.frankheijden.serverutils.velocity.reflection.RVelocityScheduler;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.slf4j.Logger;
 
 public class VelocityPluginManager extends AbstractPluginManager<PluginContainer, VelocityPluginDescription> {
@@ -92,7 +93,7 @@ public class VelocityPluginManager extends AbstractPluginManager<PluginContainer
                             dependency.getId()
                     );
                     return loadResults.addResult(description.getId(), Result.UNKNOWN_DEPENDENCY,
-                            "dependency", dependency.getId()
+                            Placeholder.unparsed("dependency", dependency.getId())
                     );
                 }
             }

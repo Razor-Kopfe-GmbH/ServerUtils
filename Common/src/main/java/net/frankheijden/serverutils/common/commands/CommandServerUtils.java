@@ -1,11 +1,33 @@
 package net.frankheijden.serverutils.common.commands;
 
-import cloud.commandframework.Command;
-import cloud.commandframework.CommandManager;
-import cloud.commandframework.arguments.CommandArgument;
-import cloud.commandframework.context.CommandContext;
+import net.frankheijden.serverutils.common.commands.arguments.JarFilesParser;
+import net.frankheijden.serverutils.common.commands.arguments.PluginParser;
+import net.frankheijden.serverutils.common.commands.arguments.PluginsParser;
+import net.frankheijden.serverutils.common.config.MessageKey;
+import net.frankheijden.serverutils.common.config.MessagesResource;
+import net.frankheijden.serverutils.common.config.ServerUtilsConfig;
+import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
+import net.frankheijden.serverutils.common.entities.ServerUtilsPlugin;
+import net.frankheijden.serverutils.common.entities.results.CloseablePluginResults;
+import net.frankheijden.serverutils.common.entities.results.PluginResult;
+import net.frankheijden.serverutils.common.entities.results.PluginResults;
+import net.frankheijden.serverutils.common.entities.results.PluginWatchResults;
+import net.frankheijden.serverutils.common.entities.results.Result;
+import net.frankheijden.serverutils.common.managers.AbstractPluginManager;
+import net.frankheijden.serverutils.common.tasks.UpdateCheckerTask;
+import net.frankheijden.serverutils.common.utils.KeyValueComponentBuilder;
+import net.frankheijden.serverutils.common.utils.ListComponentBuilder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.CommandManager;
+import org.incendo.cloud.component.CommandComponent;
+import org.incendo.cloud.context.CommandContext;
+import org.incendo.cloud.parser.ParserDescriptor;
+import org.incendo.cloud.suggestion.BlockingSuggestionProvider;
+
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,46 +35,39 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import net.frankheijden.serverutils.common.commands.arguments.JarFilesArgument;
-import net.frankheijden.serverutils.common.commands.arguments.PluginArgument;
-import net.frankheijden.serverutils.common.commands.arguments.PluginsArgument;
-import net.frankheijden.serverutils.common.config.MessageKey;
-import net.frankheijden.serverutils.common.config.MessagesResource;
-import net.frankheijden.serverutils.common.config.ServerUtilsConfig;
-import net.frankheijden.serverutils.common.entities.results.CloseablePluginResults;
-import net.frankheijden.serverutils.common.entities.results.PluginResult;
-import net.frankheijden.serverutils.common.entities.results.PluginResults;
-import net.frankheijden.serverutils.common.entities.results.PluginWatchResults;
-import net.frankheijden.serverutils.common.entities.results.Result;
-import net.frankheijden.serverutils.common.entities.ServerUtilsAudience;
-import net.frankheijden.serverutils.common.entities.ServerUtilsPlugin;
-import net.frankheijden.serverutils.common.managers.AbstractPluginManager;
-import net.frankheijden.serverutils.common.tasks.UpdateCheckerTask;
-import net.frankheijden.serverutils.common.utils.ListComponentBuilder;
-import net.frankheijden.serverutils.common.utils.KeyValueComponentBuilder;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.minimessage.Template;
 
 public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?, ?>, P, C extends ServerUtilsAudience<?>>
         extends ServerUtilsCommand<U, C> {
 
     protected final IntFunction<P[]> arrayCreator;
+    protected final Class<P> pluginType;
 
-    protected CommandServerUtils(U plugin, IntFunction<P[]> arrayCreator) {
+    protected CommandServerUtils(U plugin, IntFunction<P[]> arrayCreator, Class<P> pluginType) {
         super(plugin, "serverutils");
         this.arrayCreator = arrayCreator;
+        this.pluginType = pluginType;
+    }
+
+    protected ParserDescriptor<C, P[]> pluginsParser() {
+        return pluginsParser(null);
+    }
+
+    protected ParserDescriptor<C, P[]> pluginsParser(String path) {
+        return PluginsParser.pluginsParser(this.plugin, path, this.arrayCreator, this.pluginType);
     }
 
     @Override
     public void register(CommandManager<C> manager, Command.Builder<C> builder) {
-        addArgument(new JarFilesArgument<>(true, "jarFiles", plugin));
-        addArgument(new PluginsArgument<>(true, "plugins", new PluginsArgument.PluginsParser<>(plugin, arrayCreator)));
-        addArgument(new PluginArgument<>(true, "plugin", plugin));
-        addArgument(CommandArgument.<C, String>ofType(String.class, "command")
-                .manager(manager)
-                .withSuggestionsProvider((context, s) -> new ArrayList<>(plugin.getPluginManager().getCommands()))
-                .build());
+        addRequiredComponent("jarFiles", JarFilesParser.jarFilesParser(this.plugin));
+        addRequiredComponent("plugins", pluginsParser());
+        addRequiredComponent("plugin", PluginParser.pluginParser(this.plugin, this.pluginType));
+        CommandComponent<C> commandComponent = CommandComponent.<C, String>builder()
+                .name("command")
+                .valueType(String.class)
+                .suggestionProvider((BlockingSuggestionProvider.Strings<C>) (context, s) -> plugin.getPluginManager()
+                        .getCommands())
+                .build();
+        addComponent(commandComponent);
 
         manager.command(builder
                 .handler(this::handleHelpCommand));
@@ -63,42 +78,30 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
         registerSubcommand(manager, builder, "restart", subcommandBuilder -> subcommandBuilder
                 .handler(this::handleRestart));
         registerSubcommand(manager, builder, "loadplugin", subcommandBuilder -> subcommandBuilder
-                .argument(getArgument("jarFiles"))
+                .argument(getComponent("jarFiles"))
                 .handler(this::handleLoadPlugin));
         registerSubcommand(manager, builder, "unloadplugin", subcommandBuilder -> subcommandBuilder
-                .argument(new PluginsArgument<>(
-                        true,
-                        "plugins",
-                        new PluginsArgument.PluginsParser<>(plugin, arrayCreator, getRawPath("unloadplugin"))
-                ))
+                .required("plugins", pluginsParser(getRawPath("unloadplugin")))
                 .handler(this::handleUnloadPlugin));
         registerSubcommand(manager, builder, "reloadplugin", subcommandBuilder -> subcommandBuilder
-                .argument(new PluginsArgument<>(
-                        true,
-                        "plugins",
-                        new PluginsArgument.PluginsParser<>(plugin, arrayCreator, getRawPath("reloadplugin"))
-                ))
+                .required("plugins", pluginsParser(getRawPath("reloadplugin")))
                 .handler(this::handleReloadPlugin));
         registerSubcommand(manager, builder, "watchplugin", subcommandBuilder -> subcommandBuilder
-                .argument(new PluginsArgument<>(
-                        true,
-                        "plugins",
-                        new PluginsArgument.PluginsParser<>(plugin, arrayCreator, getRawPath("watchplugin"))
-                ))
+                .required("plugins", pluginsParser(getRawPath("watchplugin")))
                 .handler(this::handleWatchPlugin));
         registerSubcommand(manager, builder, "unwatchplugin", subcommandBuilder -> subcommandBuilder
-                .argument(getArgument("plugin"))
+                .argument(getComponent("plugin"))
                 .handler(this::handleUnwatchPlugin));
         registerSubcommand(manager, builder, "plugininfo", subcommandBuilder -> subcommandBuilder
-                .argument(getArgument("plugin"))
+                .argument(getComponent("plugin"))
                 .handler(this::handlePluginInfo));
         registerSubcommand(manager, builder, "commandinfo", subcommandBuilder -> subcommandBuilder
-                .argument(getArgument("command"))
+                .argument(getComponent("command"))
                 .handler(this::handleCommandInfo));
     }
 
     private void handleHelpCommand(CommandContext<C> context) {
-        C sender = context.getSender();
+        C sender = context.sender();
 
         MessagesResource messages = plugin.getMessagesResource();
         sender.sendMessage(messages.get(MessageKey.HELP_HEADER).toComponent());
@@ -113,9 +116,9 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
 
             if (commandElement.shouldDisplayInHelp()) {
                 sender.sendMessage(helpFormatMessage.toComponent(
-                        Template.of("command", shortestCommandAlias),
-                        Template.of("help", commandElement.getDescription().getDescription())
-                ));
+                        Placeholder.unparsed("command", shortestCommandAlias),
+                        Placeholder.unparsed("help", commandElement.getDescription().textDescription()))
+                );
             }
 
             Object subcommandsObject = commandConfig.get("subcommands");
@@ -128,8 +131,8 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
                     if (subcommandElement.shouldDisplayInHelp()) {
                         String shortestSubcommandAlias = determineShortestAlias(subcommandElement);
                         sender.sendMessage(helpFormatMessage.toComponent(
-                                Template.of("command", shortestCommandAlias + ' ' + shortestSubcommandAlias),
-                                Template.of("help", subcommandElement.getDescription().getDescription())
+                                Placeholder.unparsed("command", shortestCommandAlias + ' ' + shortestSubcommandAlias),
+                                Placeholder.unparsed("help", subcommandElement.getDescription().textDescription())
                         ));
                     }
                 }
@@ -146,8 +149,9 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
                         String shortestFlagAlias = determineShortestAlias(flagElement);
                         String flagPrefix = "-" + (flagElement.getMain().equals(shortestFlagAlias) ? "_" : "");
                         sender.sendMessage(helpFormatMessage.toComponent(
-                                Template.of("command", shortestCommandAlias + ' ' + flagPrefix + shortestFlagAlias),
-                                Template.of("help", flagElement.getDescription().getDescription())
+                                Placeholder.unparsed("command",
+                                        shortestCommandAlias + ' ' + flagPrefix + shortestFlagAlias),
+                                Placeholder.unparsed("help", flagElement.getDescription().textDescription())
                         ));
                     }
                 }
@@ -168,13 +172,13 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
     }
 
     private void handleReload(CommandContext<C> context) {
-        C sender = context.getSender();
+        C sender = context.sender();
         plugin.reload();
         plugin.getMessagesResource().get(MessageKey.RELOAD).sendTo(sender);
     }
 
     private void handleRestart(CommandContext<C> context) {
-        C sender = context.getSender();
+        C sender = context.sender();
 
         if (checkDependingPlugins(context, sender, Collections.singletonList(plugin.getPlugin()), "restart")) {
             return;
@@ -184,7 +188,7 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
     }
 
     private void handleLoadPlugin(CommandContext<C> context) {
-        C sender = context.getSender();
+        C sender = context.sender();
         List<File> jarFiles = Arrays.asList(context.get("jarFiles"));
 
         AbstractPluginManager<P, ?> pluginManager = plugin.getPluginManager();
@@ -200,7 +204,7 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
     }
 
     private void handleUnloadPlugin(CommandContext<C> context) {
-        C sender = context.getSender();
+        C sender = context.sender();
         List<P> plugins = Arrays.asList(context.get("plugins"));
 
         if (checkProtectedPlugins(sender, plugins)) {
@@ -225,7 +229,7 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
     }
 
     private void handleReloadPlugin(CommandContext<C> context) {
-        C sender = context.getSender();
+        C sender = context.sender();
         List<P> plugins = Arrays.asList(context.get("plugins"));
 
         if (checkProtectedPlugins(sender, plugins)) {
@@ -258,11 +262,11 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
             if (!dependingPlugins.isEmpty()) {
                 TextComponent.Builder builder = Component.text();
                 builder.append(messages.get(MessageKey.DEPENDING_PLUGINS_PREFIX).toComponent(
-                        Template.of("plugin", pluginId)
+                        Placeholder.unparsed("plugin", pluginId)
                 ));
                 builder.append(ListComponentBuilder.create(dependingPlugins)
                         .format(p -> messages.get(MessageKey.DEPENDING_PLUGINS_FORMAT).toComponent(
-                                Template.of("plugin", pluginManager.getPluginId(p))
+                                Placeholder.unparsed("plugin", pluginManager.getPluginId(p))
                         ))
                         .separator(messages.get(MessageKey.DEPENDING_PLUGINS_SEPARATOR).toComponent())
                         .lastSeparator(messages.get(MessageKey.DEPENDING_PLUGINS_LAST_SEPARATOR).toComponent())
@@ -279,7 +283,7 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
                     .orElse("-f");
 
             sender.sendMessage(messages.get(MessageKey.DEPENDING_PLUGINS_OVERRIDE).toComponent(
-                    Template.of("command", context.getRawInputJoined() + " " + forceFlag)
+                    Placeholder.unparsed("command", context.rawInput() + " " + forceFlag)
             ));
         }
 
@@ -293,7 +297,8 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
                         .min(Comparator.comparingInt(String::length))
                         .orElse("restart");
                 Component component = plugin.getMessagesResource().get(MessageKey.RELOADPLUGIN_SERVERUTILS).toComponent(
-                        Template.of("command", context.getRawInput().peekFirst() + " " + restartCommand)
+                        Placeholder.unparsed("command",
+                                context.rawInput().cursor(0).peekString() + " " + restartCommand)
                 );
                 sender.sendMessage(component);
                 return true;
@@ -311,7 +316,7 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
             String pluginId = pluginManager.getPluginId(plugin);
             if (protectedPlugins.contains(pluginId)) {
                 sender.sendMessage(messagesResource.get(MessageKey.GENERIC_PROTECTED_PLUGIN).toComponent(
-                        Template.of("plugin", pluginId)
+                        Placeholder.unparsed("plugin", pluginId)
                 ));
                 return true;
             }
@@ -320,7 +325,7 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
     }
 
     private void handleWatchPlugin(CommandContext<C> context) {
-        C sender = context.getSender();
+        C sender = context.sender();
         List<P> plugins = Arrays.asList(context.get("plugins"));
 
         if (checkDependingPlugins(context, sender, plugins, "watchplugin")) {
@@ -336,7 +341,7 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
     }
 
     private void handleUnwatchPlugin(CommandContext<C> context) {
-        C sender = context.getSender();
+        C sender = context.sender();
         P pluginArg = context.get("plugin");
 
         String pluginId = plugin.getPluginManager().getPluginId(pluginArg);
@@ -345,7 +350,7 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
     }
 
     private void handlePluginInfo(CommandContext<C> context) {
-        C sender = context.getSender();
+        C sender = context.sender();
         P pluginArg = context.get("plugin");
 
         createInfo(sender, "plugininfo", pluginArg, this::createPluginInfo);
@@ -358,7 +363,7 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
     );
 
     private void handleCommandInfo(CommandContext<C> context) {
-        C sender = context.getSender();
+        C sender = context.sender();
         String commandName = context.get("command");
 
         if (!plugin.getPluginManager().getCommands().contains(commandName)) {
@@ -388,7 +393,7 @@ public abstract class CommandServerUtils<U extends ServerUtilsPlugin<P, ?, C, ?,
                 KeyValueComponentBuilder.create(formatMessage, "key", "value"),
                 listBuilderConsumer -> {
                     ListComponentBuilder<String> listBuilder = ListComponentBuilder.<String>create()
-                            .format(str -> listFormatMessage.toComponent(Template.of("value", str)))
+                            .format(str -> listFormatMessage.toComponent(Placeholder.unparsed("value", str)))
                             .separator(separator)
                             .lastSeparator(lastSeparator)
                             .emptyValue(null);

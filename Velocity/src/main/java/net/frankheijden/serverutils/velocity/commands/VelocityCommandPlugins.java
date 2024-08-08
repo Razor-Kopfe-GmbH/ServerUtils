@@ -1,8 +1,8 @@
 package net.frankheijden.serverutils.velocity.commands;
 
-import cloud.commandframework.Command;
-import cloud.commandframework.CommandManager;
-import cloud.commandframework.context.CommandContext;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.CommandManager;
+import org.incendo.cloud.context.CommandContext;
 import com.velocitypowered.api.plugin.PluginContainer;
 import net.frankheijden.serverutils.common.commands.CommandPlugins;
 import net.frankheijden.serverutils.velocity.entities.VelocityAudience;
@@ -28,7 +28,7 @@ public class VelocityCommandPlugins extends CommandPlugins<VelocityPlugin, Plugi
 
     @Override
     protected void handlePlugins(CommandContext<VelocityAudience> context) {
-        VelocityAudience sender = context.getSender();
+        VelocityAudience sender = context.sender();
         boolean hasVersionFlag = context.flags().contains("version");
 
         handlePlugins(sender, plugin.getPluginManager().getPluginsSorted(), hasVersionFlag);

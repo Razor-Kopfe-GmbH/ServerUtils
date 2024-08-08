@@ -3,28 +3,24 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
     `java-library`
     `maven-publish`
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("io.github.goooler.shadow") version "8.1.7"
 }
 
 group = "net.frankheijden.serverutils"
 val dependencyDir = "${group}.dependencies"
 version = "3.5.5-SNAPSHOT"
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
+val javaVersion = 21
+
+java.toolchain.languageVersion.set(JavaLanguageVersion.of(javaVersion))
 
 subprojects {
     apply(plugin = "java")
     apply(plugin = "maven-publish")
     apply(plugin = "checkstyle")
-    apply(plugin = "com.github.johnrengelman.shadow")
+    apply(plugin = "io.github.goooler.shadow")
 
-    java {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
+    java.toolchain.languageVersion.set(JavaLanguageVersion.of(javaVersion))
 
     repositories {
         mavenCentral()
@@ -35,8 +31,8 @@ subprojects {
     }
 
     dependencies {
-        implementation("cloud.commandframework:cloud-core:${VersionConstants.cloudVersion}")
-        implementation("cloud.commandframework:cloud-brigadier:${VersionConstants.cloudVersion}")
+        implementation("org.incendo:cloud-core:${VersionConstants.cloudVersion}")
+        implementation("org.incendo:cloud-brigadier:${VersionConstants.cloudMinecraftVersion}")
         implementation("com.github.FrankHeijden:MinecraftReflection:1.0.0")
         implementation("com.google.code.gson:gson:2.8.6")
         implementation("me.lucko:commodore:2.2")
@@ -54,6 +50,7 @@ subprojects {
         }
 
         compileJava {
+            options.release.set(javaVersion)
             options.encoding = Charsets.UTF_8.name()
             options.isDeprecation = true
         }
