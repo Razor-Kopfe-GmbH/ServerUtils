@@ -2,6 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     id("net.minecrell.plugin-yml.bukkit") version "0.5.0"
+    id("xyz.jpenilla.run-paper") version "2.3.0"
 }
 
 group = rootProject.group
@@ -31,4 +32,13 @@ bukkit {
     website = "https://github.com/FrankHeijden/ServerUtils"
     softDepend = listOf("ServerUtilsUpdater")
     authors = listOf("FrankHeijden")
+}
+
+tasks {
+    runServer {
+        // Configure the Minecraft version for our task.
+        // This is the only required configuration besides applying the plugin.
+        // Your plugin's jar (or shadowJar if present) will be used automatically.
+        minecraftVersion("1.21")
+    }
 }

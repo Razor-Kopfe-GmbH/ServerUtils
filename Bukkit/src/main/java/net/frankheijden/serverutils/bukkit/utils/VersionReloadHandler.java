@@ -1,6 +1,9 @@
 package net.frankheijden.serverutils.bukkit.utils;
 
-import dev.frankheijden.minecraftreflection.MinecraftReflectionVersion;
+import net.frankheijden.serverutils.bukkit.utils.version.MinecraftVersions;
+import net.frankheijden.serverutils.bukkit.utils.version.Version;
+import net.frankheijden.serverutils.bukkit.utils.version.VersionData;
+import net.frankheijden.serverutils.bukkit.utils.version.VersionUtil;
 
 public class VersionReloadHandler implements ReloadHandler {
 
@@ -18,10 +21,15 @@ public class VersionReloadHandler implements ReloadHandler {
 
     @Override
     public void handle() throws Exception {
-        if (MinecraftReflectionVersion.MINOR > minecraftVersionMaximum) {
-            throw new Exception("ReloadHandler is incompatible with version " + MinecraftReflectionVersion.MINOR
+        if (!supportsVersion(MinecraftVersions.CURRENT)) {
+            throw new Exception("ReloadHandler is incompatible with version " + MinecraftVersions.CURRENT.patch()
                     + ". Maximum version this handler supports is " + minecraftVersionMaximum + ".");
         }
         handler.handle();
+    }
+
+
+    public boolean supportsVersion(VersionData version) {
+        return version.minor() <= minecraftVersionMaximum;
     }
 }

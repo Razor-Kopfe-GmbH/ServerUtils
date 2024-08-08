@@ -1,6 +1,5 @@
 package net.frankheijden.serverutils.bukkit.commands;
 
-import dev.frankheijden.minecraftreflection.MinecraftReflectionVersion;
 import net.frankheijden.serverutils.bukkit.config.BukkitMessageKey;
 import net.frankheijden.serverutils.bukkit.entities.BukkitAudience;
 import net.frankheijden.serverutils.bukkit.entities.BukkitPlugin;
@@ -9,6 +8,8 @@ import net.frankheijden.serverutils.bukkit.reflection.RCraftServer;
 import net.frankheijden.serverutils.bukkit.reflection.RDedicatedServer;
 import net.frankheijden.serverutils.bukkit.utils.ReloadHandler;
 import net.frankheijden.serverutils.bukkit.utils.VersionReloadHandler;
+import net.frankheijden.serverutils.bukkit.utils.version.MinecraftVersions;
+import net.frankheijden.serverutils.bukkit.utils.version.VersionUtil;
 import net.frankheijden.serverutils.common.commands.CommandServerUtils;
 import net.frankheijden.serverutils.common.config.MessageKey;
 import net.frankheijden.serverutils.common.config.MessagesResource;
@@ -70,7 +71,7 @@ public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, P
                 .filter(r -> {
                     if (r instanceof VersionReloadHandler) {
                         VersionReloadHandler reloadHandler = ((VersionReloadHandler) r);
-                        return MinecraftReflectionVersion.MINOR <= reloadHandler.getMinecraftVersionMaximum();
+                        return reloadHandler.supportsVersion(MinecraftVersions.CURRENT);
                     }
                     return true;
                 })
@@ -134,7 +135,7 @@ public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, P
             VersionReloadHandler versionReloadHandler = (VersionReloadHandler) handler;
             int max = versionReloadHandler.getMinecraftVersionMaximum();
 
-            if (MinecraftReflectionVersion.MINOR > max) {
+            if (MinecraftVersions.CURRENT.minor() > max) {
                 messages.get(BukkitMessageKey.RELOADCONFIG_NOT_SUPPORTED).sendTo(
                         sender,
                         Placeholder.unparsed("config", config)
@@ -183,11 +184,11 @@ public class BukkitCommandServerUtils extends CommandServerUtils<BukkitPlugin, P
                 .key("Depend").value(listBuilderFunction.apply(b -> b.addAll(description.getDepend())))
                 .key("Soft Depend").value(listBuilderFunction.apply(b -> b.addAll(description.getSoftDepend())));
 
-        if (MinecraftReflectionVersion.MINOR >= 13) {
+        if (MinecraftVersions.CURRENT.minor() >= 13) {
             builder.key("API Version").value(description.getAPIVersion());
         }
 
-        if (MinecraftReflectionVersion.MINOR >= 15) {
+        if (MinecraftVersions.CURRENT.minor() >= 15) {
             builder.key("Provides").value(listBuilderFunction.apply(b -> b.addAll(description.getProvides())));
         }
 

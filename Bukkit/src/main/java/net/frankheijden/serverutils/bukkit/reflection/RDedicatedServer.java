@@ -2,7 +2,8 @@ package net.frankheijden.serverutils.bukkit.reflection;
 
 import dev.frankheijden.minecraftreflection.ClassObject;
 import dev.frankheijden.minecraftreflection.MinecraftReflection;
-import dev.frankheijden.minecraftreflection.MinecraftReflectionVersion;
+import net.frankheijden.serverutils.bukkit.utils.version.MinecraftVersions;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,9 +26,9 @@ public class RDedicatedServer {
     public static void reload(Object console) {
         Object options = reflection.get(console, "options");
 
-        if (MinecraftReflectionVersion.MINOR >= 13) {
+        if (MinecraftVersions.CURRENT.minor() >= 13) {
             Object propertyManager;
-            if (MinecraftReflectionVersion.isMin(16, 2)) {
+            if (MinecraftVersions.CURRENT.isAtLeast(MinecraftVersions.V1_16_2)) {
                 propertyManager = RDedicatedServerSettings.newInstance(reflection.invoke(console, "getCustomRegistry"),
                         options);
             } else {
@@ -44,16 +45,16 @@ public class RDedicatedServer {
                     ClassObject.of(boolean.class, getConfigValue(config, "forceGamemode")));
 
             Object resourcePackHash;
-            if (MinecraftReflectionVersion.MINOR <= 15 || MinecraftReflectionVersion.is(16, 1)) {
+            if (MinecraftVersions.CURRENT.minor() <= 15 || MinecraftVersions.CURRENT.is(MinecraftVersions.V1_16_1)) {
                 resourcePackHash = reflection.invoke(console, "aZ");
-            } else if (MinecraftReflectionVersion.is(16, 3)) {
+            } else if (MinecraftVersions.CURRENT.is(MinecraftVersions.V1_16_3)) {
                 resourcePackHash = reflection.invoke(console, "ba");
             } else {
                 resourcePackHash = reflection.invoke(console, "aY");
             }
             reflection.invoke(console, "setResourcePack", getConfigValue(config, "resourcePack"), resourcePackHash);
 
-            if (MinecraftReflectionVersion.MINOR <= 15) {
+            if (MinecraftVersions.CURRENT.minor() <= 15) {
                 reflection.invoke(console, "setSpawnAnimals",
                         ClassObject.of(boolean.class, getConfigValue(config, "spawnAnimals")));
                 reflection.invoke(console, "setSpawnNPCs",
@@ -80,12 +81,12 @@ public class RDedicatedServer {
      */
     public static void reloadServerProperties() {
         Object console = RCraftServer.getConsole();
-        Object playerList = RMinecraftServer.getReflection().get(console, MinecraftReflectionVersion.MINOR >= 13
+        Object playerList = RMinecraftServer.getReflection().get(console, MinecraftVersions.CURRENT.minor() >= 13
                 ? "playerList"
                 : "v");
         Object propertyManager = reflection.get(console, "propertyManager");
         File file;
-        if (MinecraftReflectionVersion.MINOR >= 14) {
+        if (MinecraftVersions.CURRENT.minor() >= 14) {
             file = RDedicatedServerSettings.getServerPropertiesPath(propertyManager).toFile();
         } else {
             file = RPropertyManager.getReflection().get(propertyManager, "file");
@@ -102,7 +103,7 @@ public class RDedicatedServer {
         RPlayerList.getReflection().set(playerList, "maxPlayers", maxPlayers);
 
         int viewDistance = Integer.parseInt(properties.getProperty("view-distance"));
-        if (MinecraftReflectionVersion.MINOR >= 14) {
+        if (MinecraftVersions.CURRENT.minor() >= 14) {
             RPlayerList.getReflection().set(playerList, "viewDistance", viewDistance);
         }
         RPlayerList.getReflection().invoke(playerList, "a", ClassObject.of(int.class, viewDistance));

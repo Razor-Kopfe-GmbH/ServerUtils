@@ -1,10 +1,11 @@
 package net.frankheijden.serverutils.bukkit.reflection;
 
 import dev.frankheijden.minecraftreflection.MinecraftReflection;
-import dev.frankheijden.minecraftreflection.MinecraftReflectionVersion;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+
+import net.frankheijden.serverutils.bukkit.utils.version.MinecraftVersions;
 import org.bukkit.plugin.Plugin;
 
 public class RMinecraftKey {
@@ -12,7 +13,7 @@ public class RMinecraftKey {
     private static final MinecraftReflection reflection;
 
     static {
-        if (MinecraftReflectionVersion.MINOR >= 17) {
+        if (MinecraftVersions.CURRENT.minor() >= 17) {
             reflection = MinecraftReflection.of("net.minecraft.resources.MinecraftKey");
         } else {
             reflection = MinecraftReflection.of("net.minecraft.server.%s.MinecraftKey");
@@ -31,11 +32,11 @@ public class RMinecraftKey {
      * @return The namespace.
      */
     public static String getNameSpace(Object instance) {
-        if (MinecraftReflectionVersion.MINOR <= 13) {
+        if (MinecraftVersions.CURRENT.minor() <= 13) {
             return reflection.get(instance, "a");
-        } else if (MinecraftReflectionVersion.MINOR == 17) {
+        } else if (MinecraftVersions.CURRENT.minor() == 17) {
             return reflection.invoke(instance, "getNamespace");
-        } else if (MinecraftReflectionVersion.MINOR >= 18) {
+        } else if (MinecraftVersions.CURRENT.minor() >= 18) {
             return reflection.invoke(instance, "b");
         }
         return reflection.get(instance, "namespace");

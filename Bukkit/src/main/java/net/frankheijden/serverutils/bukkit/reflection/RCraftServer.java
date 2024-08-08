@@ -1,11 +1,13 @@
 package net.frankheijden.serverutils.bukkit.reflection;
 
 import dev.frankheijden.minecraftreflection.MinecraftReflection;
-import dev.frankheijden.minecraftreflection.MinecraftReflectionVersion;
 import java.io.File;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+
+import net.frankheijden.serverutils.bukkit.utils.version.MinecraftVersions;
+import net.frankheijden.serverutils.bukkit.utils.version.VersionUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Warning;
 import org.bukkit.command.Command;
@@ -16,7 +18,7 @@ import org.bukkit.entity.Player;
 public class RCraftServer {
 
     private static final MinecraftReflection reflection = MinecraftReflection
-            .of("org.bukkit.craftbukkit.%s.CraftServer");
+            .of("org.bukkit.craftbukkit.CraftServer");
 
     public static MinecraftReflection getReflection() {
         return reflection;
@@ -49,7 +51,7 @@ public class RCraftServer {
      */
     @SuppressWarnings({"rawtypes"})
     public static void syncCommands(Set<String> removedCommands) {
-        if (MinecraftReflectionVersion.MINOR < 13) return;
+        if (MinecraftVersions.CURRENT.minor() < 13) return;
 
         Collection children = RCommandDispatcher.getDispatcher().getRoot().getChildren();
         reflection.invoke(Bukkit.getServer(), "syncCommands");
@@ -70,12 +72,12 @@ public class RCraftServer {
      * Updates commands for all online players.
      */
     public static void updateCommands() {
-        if (MinecraftReflectionVersion.MINOR < 13) return;
+        if (MinecraftVersions.CURRENT.minor() < 13) return;
         Bukkit.getOnlinePlayers().forEach(RCraftServer::updateCommands);
     }
 
     public static void updateCommands(Player player) {
-        if (MinecraftReflectionVersion.MINOR < 13) return;
+        if (MinecraftVersions.CURRENT.minor() < 13) return;
         player.updateCommands();
     }
 
@@ -98,13 +100,13 @@ public class RCraftServer {
         reflection.set(Bukkit.getServer(), "ambientSpawn", bukkit.getInt("spawn-limits.ambient"));
         reflection.set(Bukkit.getServer(), "warningState",
                 Warning.WarningState.value(bukkit.getString("settings.deprecated-verbose")));
-        if (MinecraftReflectionVersion.isMin(14))
+        if (MinecraftVersions.CURRENT.minor() >= 14)
             reflection.set(Bukkit.getServer(), "minimumAPI", bukkit.getString("settings.minimum-api"));
         reflection.set(Bukkit.getServer(), "printSaveWarning", false);
         reflection.set(Bukkit.getServer(), "monsterSpawn", bukkit.getInt("spawn-limits.monsters"));
         reflection.set(Bukkit.getServer(), "monsterSpawn", bukkit.getInt("spawn-limits.monsters"));
         reflection.set(Bukkit.getServer(), "monsterSpawn", bukkit.getInt("spawn-limits.monsters"));
-        if (MinecraftReflectionVersion.isMax(12)) {
+        if (MinecraftVersions.CURRENT.minor() <= 12) {
             reflection.set(Bukkit.getServer(), "chunkGCPeriod", bukkit.getInt("chunk-gc.period-in-ticks"));
             reflection.set(Bukkit.getServer(), "chunkGCLoadThresh", bukkit.getInt("chunk-gc.load-threshold"));
         }
@@ -136,12 +138,12 @@ public class RCraftServer {
         reflection.set(Bukkit.getServer(), "commandsConfiguration", commands);
         reflection.set(Bukkit.getServer(), "overrideAllCommandBlockCommands",
                 commands.getStringList("command-block-overrides").contains("*"));
-        if (MinecraftReflectionVersion.isMin(13)) reflection.set(
+        if (MinecraftVersions.CURRENT.minor() >= 13) reflection.set(
                 Bukkit.getServer(),
                 "ignoreVanillaPermissions",
                 commands.getBoolean("ignore-vanilla-permissions")
         );
-        if (MinecraftReflectionVersion.is(12)) reflection.set(
+        if (MinecraftVersions.CURRENT.minor() == 12) reflection.set(
                 Bukkit.getServer(),
                 "unrestrictedAdvancements",
                 commands.getBoolean("unrestricted-advancements")

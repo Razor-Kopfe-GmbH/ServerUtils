@@ -3,8 +3,8 @@ package net.frankheijden.serverutils.bukkit.reflection;
 import java.lang.reflect.Field;
 import java.util.Map;
 import dev.frankheijden.minecraftreflection.MinecraftReflection;
-import dev.frankheijden.minecraftreflection.MinecraftReflectionVersion;
 import dev.frankheijden.minecraftreflection.Reflection;
+import net.frankheijden.serverutils.bukkit.utils.version.MinecraftVersions;
 import net.frankheijden.serverutils.common.utils.ReflectionUtils;
 import org.bukkit.plugin.PluginLoader;
 
@@ -34,7 +34,7 @@ public class RPluginClassLoader {
     }
 
     public static ClassLoader getLibraryLoader(ClassLoader loader) {
-        if (loader == null || MinecraftReflectionVersion.MINOR <= 16) return null;
+        if (loader == null || MinecraftVersions.CURRENT.minor() <= 16) return null;
         return reflection.get(loader, "libraryLoader");
     }
 
@@ -45,7 +45,7 @@ public class RPluginClassLoader {
         if (classLoader == null) return;
 
         reflection.set(classLoader, "loader", null);
-        if (MinecraftReflectionVersion.MINOR > 16) {
+        if (MinecraftVersions.CURRENT.minor() > 16) {
             ReflectionUtils.doPrivilegedWithUnsafe(unsafe -> {
                 Field libraryLoaderField = Reflection.getField(reflection.getClazz(), "libraryLoader");
                 unsafe.putObject(classLoader, unsafe.objectFieldOffset(libraryLoaderField), null);
