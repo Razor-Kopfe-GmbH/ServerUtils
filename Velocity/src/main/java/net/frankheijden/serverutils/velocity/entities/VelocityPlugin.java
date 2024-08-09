@@ -10,6 +10,7 @@ import net.frankheijden.serverutils.velocity.commands.VelocityCommandServerUtils
 import net.frankheijden.serverutils.velocity.listeners.VelocityPlayerListener;
 import net.frankheijden.serverutils.velocity.managers.VelocityPluginManager;
 import net.frankheijden.serverutils.velocity.managers.VelocityTaskManager;
+import org.incendo.cloud.CommandManager;
 import org.incendo.cloud.SenderMapper;
 import org.incendo.cloud.execution.ExecutionCoordinator;
 import org.incendo.cloud.velocity.VelocityCommandManager;
@@ -99,7 +100,7 @@ public class VelocityPlugin extends ServerUtilsPlugin<PluginContainer, Scheduled
     }
 
     @Override
-    protected void reloadPlugin() {
+    protected void registerCommands(CommandManager<VelocityAudience> commandManager) {
         new VelocityCommandPlugins(this).register(commandManager);
         new VelocityCommandServerUtils(this).register(commandManager);
     }

@@ -12,10 +12,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.incendo.cloud.CommandManager;
 import org.incendo.cloud.SenderMapper;
-import org.incendo.cloud.bukkit.CloudBukkitCapabilities;
 import org.incendo.cloud.execution.ExecutionCoordinator;
-import org.incendo.cloud.paper.LegacyPaperCommandManager;
+import org.incendo.cloud.paper.PaperCommandManager;
+import org.incendo.cloud.setting.ManagerSetting;
 
 import java.io.File;
 import java.util.Arrays;
@@ -44,16 +45,13 @@ public class BukkitPlugin extends ServerUtilsPlugin<Plugin, BukkitTask, BukkitAu
     }
 
     @Override
-    protected LegacyPaperCommandManager<BukkitAudience> newCommandManager() {
-        LegacyPaperCommandManager<BukkitAudience> commandManager;
+    protected PaperCommandManager<BukkitAudience> newCommandManager() {
+        PaperCommandManager<BukkitAudience> commandManager;
         try {
-            commandManager = new LegacyPaperCommandManager<>(
-                    plugin,
-                    ExecutionCoordinator.simpleCoordinator(),
-                    SenderMapper.create(chatProvider::get, BukkitAudience::getSource));
-            if (commandManager.hasCapability(CloudBukkitCapabilities.BRIGADIER)) {
-                commandManager.registerBrigadier();
-            }
+            commandManager = PaperCommandManager.builder(SenderMapper.create(chatProvider::getFromSourceStack, BukkitAudience::sourceStack))
+                    .executionCoordinator(ExecutionCoordinator.simpleCoordinator())
+                    .buildOnEnable(this.plugin);
+            commandManager.settings().set(ManagerSetting.ALLOW_UNSAFE_REGISTRATION, true);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -111,8 +109,7 @@ public class BukkitPlugin extends ServerUtilsPlugin<Plugin, BukkitTask, BukkitAu
     }
 
     @Override
-    protected void reloadPlugin() {
-        this.messagesResource.load(Arrays.asList(BukkitMessageKey.values()));
+    protected void registerCommands(CommandManager<BukkitAudience> commandManager) {
         if (getConfigResource().getConfig().getBoolean("settings.disable-plugins-command")) {
             if (registeredPluginsCommand) {
                 BukkitPluginManager.unregisterCommands("pl", "plugins");
@@ -125,7 +122,11 @@ public class BukkitPlugin extends ServerUtilsPlugin<Plugin, BukkitTask, BukkitAu
             this.registeredPluginsCommand = true;
         }
         new BukkitCommandServerUtils(this).register(commandManager);
+    }
 
+    @Override
+    protected void reloadPlugin() {
+        this.messagesResource.load(Arrays.asList(BukkitMessageKey.values()));
         taskManager.runTask(() -> BukkitPluginManager.unregisterExactCommands(plugin.getDisabledCommands()));
     }
 }

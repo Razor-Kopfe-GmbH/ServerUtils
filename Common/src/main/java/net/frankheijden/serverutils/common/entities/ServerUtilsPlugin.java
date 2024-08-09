@@ -1,18 +1,5 @@
 package net.frankheijden.serverutils.common.entities;
 
-import org.incendo.cloud.Command;
-import org.incendo.cloud.CommandManager;
-import org.incendo.cloud.brigadier.CloudBrigadierManager;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.logging.Logger;
 import net.frankheijden.serverutils.common.ServerUtilsApp;
 import net.frankheijden.serverutils.common.commands.brigadier.BrigadierHandler;
 import net.frankheijden.serverutils.common.config.CommandsResource;
@@ -28,6 +15,21 @@ import net.frankheijden.serverutils.common.managers.WatchManager;
 import net.frankheijden.serverutils.common.providers.ResourceProvider;
 import net.frankheijden.serverutils.common.providers.ServerUtilsAudienceProvider;
 import net.frankheijden.serverutils.common.utils.FileUtils;
+import org.incendo.cloud.CloudCapability;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.CommandManager;
+import org.incendo.cloud.brigadier.CloudBrigadierManager;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.logging.Logger;
 
 public abstract class ServerUtilsPlugin<P, T, C extends ServerUtilsAudience<S>, S, D extends ServerUtilsPluginDescription> {
 
@@ -133,6 +135,8 @@ public abstract class ServerUtilsPlugin<P, T, C extends ServerUtilsAudience<S>, 
 
     protected abstract CommandManager<C> newCommandManager();
 
+    protected abstract void registerCommands(CommandManager<C> commandManager);
+
     protected void handleBrigadier(CloudBrigadierManager<C, ?> brigadierManager) {
         BrigadierHandler<C, P> handler = new BrigadierHandler<>(brigadierManager);
         handler.registerTypes();
@@ -182,7 +186,10 @@ public abstract class ServerUtilsPlugin<P, T, C extends ServerUtilsAudience<S>, 
         this.configResource = new ConfigResource(this);
         this.messagesResource = new MessagesResource(this);
         this.messagesResource.load(Arrays.asList(MessageKey.values()));
-        this.commandManager = newCommandManager();
+        if (this.commandManager == null) {
+            this.commandManager = newCommandManager();
+            registerCommands(this.commandManager);
+        }
         reloadPlugin();
     }
 

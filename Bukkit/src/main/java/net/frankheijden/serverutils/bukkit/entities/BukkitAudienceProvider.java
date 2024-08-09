@@ -1,5 +1,6 @@
 package net.frankheijden.serverutils.bukkit.entities;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.frankheijden.serverutils.bukkit.ServerUtils;
 import net.frankheijden.serverutils.common.providers.ServerUtilsAudienceProvider;
 import net.kyori.adventure.text.Component;
@@ -30,6 +31,10 @@ public class BukkitAudienceProvider implements ServerUtilsAudienceProvider<Comma
     @Override
     public BukkitAudience get(CommandSender source) {
         return new BukkitAudience(source, source);
+    }
+
+    public BukkitAudience getFromSourceStack(CommandSourceStack sourceStack) {
+        return new BukkitAudience(sourceStack.getSender(), sourceStack);
     }
 
     @Override

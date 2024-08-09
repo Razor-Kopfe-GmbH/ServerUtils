@@ -11,6 +11,7 @@ import net.kyori.adventure.platform.bungeecord.BungeeAudiences;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
+import org.incendo.cloud.CommandManager;
 import org.incendo.cloud.SenderMapper;
 import org.incendo.cloud.bungee.BungeeCommandManager;
 import org.incendo.cloud.execution.ExecutionCoordinator;
@@ -100,7 +101,7 @@ public class BungeePlugin extends ServerUtilsPlugin<Plugin, ScheduledTask, Bunge
     }
 
     @Override
-    protected void reloadPlugin() {
+    protected void registerCommands(CommandManager<BungeeAudience> commandManager) {
         new BungeeCommandPlugins(this).register(commandManager);
         new BungeeCommandServerUtils(this).register(commandManager);
     }
